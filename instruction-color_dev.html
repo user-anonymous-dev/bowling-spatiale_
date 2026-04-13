@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEV_DOC | Système Chromatique</title>
+    <style>
+        /* DESIGN SYSTÈME - NOIR ET BLANC UNIQUEMENT */
+        :root {
+            --bg: #ffffff;
+            --text: #000000;
+            --border: #000000;
+            --hover: #f0f0f0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: "Courier New", Courier, monospace;
+            margin: 0;
+            padding: 40px;
+            line-height: 1.4;
+        }
+
+        header {
+            border-bottom: 4px solid var(--border);
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .status-bar {
+            border: 1px solid var(--border);
+            padding: 10px;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        section {
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            border-left: 10px solid var(--border);
+            padding-left: 15px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--text);
+            color: var(--bg);
+        }
+
+        /* Styles pour les codes HEX cliquables */
+        code {
+            font-weight: bold;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        code:hover {
+            background-color: var(--text);
+            color: var(--bg);
+        }
+
+        .preview {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--border);
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .copy-feedback {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            padding: 10px 20px;
+            display: none;
+            font-weight: bold;
+        }
+
+        footer {
+            margin-top: 100px;
+            font-size: 0.8rem;
+            text-align: center;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>System_Color_Library_v1.0</h1>
+    </header>
+
+    <div class="status-bar">
+        <span>ACCÈS : DÉVELOPPEURS UNIQUEMENT</span>
+        <span>PROJET : ESPACE_INFO_2026</span>
+        <span>STATUT : STABLE</span>
+    </div>
+
+    <section>
+        <h2>01. Palette de Base (Interface Dev)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>NOM VARIABLE</th>
+                    <th>CODE HEX (Cliquer pour copier)</th>
+                    <th>USAGE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>--BASE-BLACK</td>
+                    <td><code>#000000</code></td>
+                    <td>Fonds principaux, vide spatial.</td>
+                </tr>
+                <tr>
+                    <td>--BASE-WHITE</td>
+                    <td><code>#FFFFFF</code></td>
+                    <td>Textes, contours, indicateurs critiques.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>02. Palette Immersion (Autres Pages)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>NOM VARIABLE</th>
+                    <th>CODE HEX</th>
+                    <th>RENDU</th>
+                    <th>CONTEXTE</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>--SPACE-BLUE</td>
+                    <td><code>#1E293B</code></td>
+                    <td><div class="preview" style="background:#1E293B"></div></td>
+                    <td>Atmosphère / Nébuleuses sombres</td>
+                </tr>
+                <tr>
+                    <td>--STAR-CYAN</td>
+                    <td><code>#06B6D4</code></td>
+                    <td><div class="preview" style="background:#06B6D4"></div></td>
+                    <td>Interfaces tech / HUD</td>
+                </tr>
+                <tr>
+                    <td>--NOVA-ORANGE</td>
+                    <td><code>#F59E0B</code></td>
+                    <td><div class="preview" style="background:#F59E0B"></div></td>
+                    <td>Alertes / Moteurs</td>
+                </tr>
+                <tr>
+                    <td>--PULSAR-PURPLE</td>
+                    <td><code>#8B5CF6</code></td>
+                    <td><div class="preview" style="background:#8B5CF6"></div></td>
+                    <td>IA / Énergie exotique</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <div id="feedback" class="copy-feedback">VALEUR COPIÉE !</div>
+
+    <footer>
+        [FIN DU FICHIER]
+    </footer>
+
+    <script>
+        // Gestion de la copie dans le presse-papier
+        const codes = document.querySelectorAll('code');
+        const feedback = document.getElementById('feedback');
+
+        codes.forEach(code => {
+            code.addEventListener('click', () => {
+                const hex = code.innerText;
+                
+                navigator.clipboard.writeText(hex).then(() => {
+                    // Affichage du message de confirmation
+                    feedback.style.display = 'block';
+                    
+                    // Masquer après 1.5 seconde
+                    setTimeout(() => {
+                        feedback.style.display = 'none';
+                    }, 1500);
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
