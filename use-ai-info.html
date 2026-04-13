@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilisation de l'IA dans notre projet infos</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--light);
+            background-color: var(--dark);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 4rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        h1 { margin: 0; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        p.subtitle { font-size: 1.2rem; opacity: 0.9; margin-top: 10px; }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        section {
+            background: var(--gray);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--secondary);
+        }
+
+        h2 { color: var(--secondary); border-bottom: 1px solid #475569; padding-bottom: 0.5rem; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.1); }
+
+        .tag {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        footer { text-align: center; padding: 2rem; color: #94a3b8; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Transparence & IA</h1>
+        <p class="subtitle">Utilisation de l'IA dans notre projet informatique</p>
+    </header>
+
+    <div class="container">
+        
+        <section id="intro">
+            <h2>L'IA</h2>
+            <p>L'intelligence artificielle n'est plus une simple promesse futuriste. Dans le développement de notre jeu, nous l'avons <strong>utilisée à plusieurs reprises</strong> pour un gain de temps, des améliorations, ainsi que pour du support technique. Plus de détails ci-dessous.</p>
+        </section>
+
+        <div class="grid">
+            <article class="card">
+                <span class="tag">Utilisation secondaire</span>
+                <h3>Explication et lisibilité du script</h3>
+                <p>Nous utilisons l'IA pour <strong>améliorer</strong> la lisibilité du script pour les utilisateurs voulant l'étudier, et pour <strong>expliquer</strong> les blocs de code de manière claire et sans ambiguïté.</p>
+            </article>
+
+            <article class="card">
+                <span class="tag">Utilisation Principale</span>
+                <h3>Support & Correction</h3>
+                <p>Pour ne pas rendre la tâche trop longue ou difficile, nous utilisons l'IA si nous ne trouvons pas la méthode pour faire fonctionner correctement le script, ou pour <em>corriger</em> des bugs persistants afin d'améliorer l'expérience des utilisateurs.</p>
+            </article>
+
+            <article class="card">
+                <span class="tag">Utilisation Principale</span>
+                <h3>Optimisation du temps</h3>
+                <p>Grâce à l'IA, il est possible de faire des gains de temps énormes. C'est pour cela que nous l'utilisons pour automatiser certaines tâches chronophages ou répétitives.</p>
+            </article>
+        </div>
+
+        <section style="margin-top: 2rem;">
+            <h2>Précision</h2>
+            <p>Il est <strong>possible que l'IA ait été utilisée</strong> dans d'autres circonstances, mais de manière modérée.</p>
+        </section>
+
+    </div>
+
+    <footer>
+        &copy; Libre de droits, sans revenu
+    </footer>
+
+</body>
+</html>
