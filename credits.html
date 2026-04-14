@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crédits</title>
+    <style>
+        :root {
+            /* Palette Espace */
+            --primary: #06b6d4;    /* Cyan Étoile */
+            --secondary: #8b5cf6;  /* Violet Nébuleuse */
+            --dark: #05070a;       /* Noir Spatial */
+            --light: #f8fafc;      /* Starlight */
+            --gray: #1e293b;       /* Bleu profond */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--light);
+            background-color: var(--dark);
+            margin: 0;
+            padding: 0;
+            /* Ajout d'une subtile image de fond étoilée si tu le souhaites un jour */
+            /* background-image: url('stars.png'); */
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f172a, var(--secondary), var(--dark));
+            padding: 4rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-bottom: 1px solid var(--primary);
+        }
+
+        h1 { margin: 0; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        p.subtitle { font-size: 1.2rem; opacity: 0.9; margin-top: 10px; }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        section {
+            background: var(--gray);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        h2 { 
+            color: var(--primary); 
+            border-bottom: 1px solid #334155; 
+            padding-bottom: 0.5rem; 
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            text-align: left;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card:hover { 
+            transform: translateY(-5px); 
+            background: rgba(255,255,255,0.07);
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .role-tag {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .name { 
+            color: var(--light); 
+            font-size: 1.4rem; 
+            margin: 0 0 10px 0; 
+            font-weight: bold;
+        }
+
+        .description {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .tech-list {
+            list-style: none;
+            padding: 0;
+            color: #cbd5e1;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .tech-list li {
+            margin: 5px 0;
+        }
+
+        .tech-list li::before {
+            content: "> ";
+            color: var(--primary);
+        }
+
+        footer { 
+            text-align: center; 
+            padding: 4rem 2rem; 
+            color: #64748b; 
+            font-size: 0.9rem; 
+            border-top: 1px solid #1e293b;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>L'équipage</h1>
+        <p class="subtitle">L'équipe derrière le projet</p>
+    </header>
+
+    <div class="container">
+        
+        <section id="equipe">
+            <h2>L'Équipage Principal</h2>
+            
+            <div class="grid">
+                <article class="card">
+                    <span class="role-tag">Direction & Développement</span>
+                    <h3 class="name">@gianni.core (Discord) — Id : 1188155402794307685</h3>
+                    <p class="description">Gestion : aspect légal, documentation, identité visuelle, forum Discord et développement.<br>@gianni.core a géré la majeure partie du projet, mais n'aurait pas pu le mener à bien sans le reste de l'équipe.</p>
+                </article>
+
+                <article class="card">
+                    <span class="role-tag">Conseil, Orga & Peaufinage</span>
+                    <h3 class="name">@blakpanter0358 (Discord) — Id : 1337310179254997054</h3>
+                    <p class="description">@blakpanter0358 a principalement donné son avis, géré le lancement du projet et peaufiné les derniers détails à la fin.</p>
+                </article>
+
+                <article class="card">
+                    <span class="role-tag">Responsable Design</span>
+                    <h3 class="name">@aliwert23 (Discord) — Id : 1358921365893284044</h3>
+                    <p class="description">@aliwert23 a principalement participé à la conception du design et des visuels.</p>
+                </article>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        &copy; Game Jam 2026<br>
+        <span style="font-size: 0.8rem; opacity: 0.5;">[Fin]</span>
+    </footer>
+
+</body>
+</html>
