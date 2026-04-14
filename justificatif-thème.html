@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Justification Thématique | Game Jam 2026</title>
+    <style>
+        /* PALETTE OFFICIELLE */
+        :root {
+            --BASE-BLACK: #000000;
+            --BASE-WHITE: #FFFFFF;
+            --SPACE-BLUE: #1E293B;
+            --STAR-CYAN: #06B6D4;
+            --NOVA-ORANGE: #F59E0B;
+            --PULSAR-PURPLE: #8B5CF6;
+        }
+
+        body {
+            background-color: var(--BASE-BLACK);
+            color: var(--BASE-WHITE);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            padding: 60px 0;
+        }
+
+        /* STYLE DES TITRES */
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--STAR-CYAN);
+            text-align: center;
+            margin-bottom: 50px;
+            font-weight: 400;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+
+        /* BLOCS DE PREUVE / CARTES */
+        .card {
+            background-color: transparent;
+            border-bottom: 1px solid #333;
+            padding: 40px 0;
+        }
+
+        .card:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--PULSAR-PURPLE);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 0 0 15px 0;
+            color: var(--STAR-CYAN);
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+
+        strong {
+            color: var(--NOVA-ORANGE);
+        }
+
+        /* FOOTER MINIMALISTE */
+        footer {
+            margin-top: 50px;
+            padding: 40px;
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            width: 100%;
+            border-top: 1px solid #222;
+        }
+
+        /* MISE EN AVANT */
+        .highlight-box {
+            background-color: rgba(30, 41, 59, 0.3);
+            border-left: 4px solid var(--STAR-CYAN);
+            padding: 20px;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <h1>Respect du Thème</h1>
+        <p class="subtitle">Justification et preuves pour la Game Jam 2026</p>
+
+        <section>
+            <h2>Rappel du Thème</h2>
+            <p>
+                Le thème est la simulation de l'univers (étoiles, galaxies, physique spatiale), avec des interactions et des comportements dynamiques.
+            </p>
+        </section>
+
+        <div class="card">
+            <span class="badge" style="color: var(--NOVA-ORANGE);">Preuve Majeure</span>
+            <h3>Physique Spatiale</h3>
+            <p>
+                Conformément aux instructions de la <strong>Game Jam 2026</strong>, nous avons principalement axé le développement sur la physique spatiale, notre jeu étant basé sur la collision de différents corps célestes.
+            </p>
+        </div>
+
+        <div class="card">
+            <span class="badge">Mécanique de Jeu</span>
+            <h3>Bowling</h3>
+            <p>
+                Le gameplay de notre "Bowling Spatiale" exploite le thème via des collisions entre des astres. L'utilisation des <strong>propriétés scientifiques</strong> de ces derniers permet de pousser le jeu à un réalisme maximum et d'identifier immédiatement la nature de chaque astre.
+            </p>
+        </div>
+
+        <div class="card">
+            <span class="badge" style="color: var(--STAR-CYAN);">Support Technique</span>
+            <h3>Optimisation et Lisibilité</h3>
+            <p>
+                Comme détaillé dans nos documents techniques, le code a été structuré pour garantir des <strong>performances maximales</strong> dans l'environnement du jeu, tout en restant le plus fidèle possible à l'esthétique des astres et à leurs propriétés.
+            </p>
+        </div>
+
+        <section class="highlight-box">
+            <h2 style="margin-top: 0; font-size: 1.4rem;">Précision Technique</h2>
+            <p>
+                Bien que la précision de nos programmes informatiques et de nos algorithmes de calcul physique ne soit pas absolue, elle a été optimisée pour offrir l'expérience ludique et visuelle la plus crédible possible dans le temps imparti.
+            </p>
+        </section>
+
+    </div>
+
+    <footer>
+        © Projet Bowling Spatiale_ - Game Jam 2026
+    </footer>
+
+</body>
+</html>
