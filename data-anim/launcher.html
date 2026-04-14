@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Bowling - Intro</title>
+    <title>Space Bowling - Deep Space Edition</title>
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #050510; overflow: hidden;
+        :root {
+            --SPACE-BLUE: #1E293B;
+            --STAR-CYAN: #06B6D4;
+            --NOVA-ORANGE: #F59E0B;
+            --PULSAR-PURPLE: #8B5CF6;
         }
 
-        /* Fond spatial */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--SPACE-BLUE);
+            overflow: hidden;
+        }
+
+        /* Fond avec gradient Nébuleuse */
         .starfield {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            background: radial-gradient(circle at center, #2d3e5a 0%, var(--SPACE-BLUE) 100%);
             z-index: 0;
         }
 
@@ -22,62 +30,82 @@
             width: 0; height: 0; z-index: 10;
         }
 
-        /* Secousse lors de l'impact */
-        @keyframes shake {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(-12px, 8px); }
-            50% { transform: translate(12px, -8px); }
-            75% { transform: translate(-8px, -12px); }
+        /* Effet d'impact (Nova Orange) */
+        .impact-flash {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 10px; height: 10px;
+            background: var(--NOVA-ORANGE);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            z-index: 5;
         }
-        .shake-active { animation: shake 0.25s ease-in-out; }
+        .flash-active {
+            animation: flashAnim 0.5s ease-out;
+        }
 
-        /* Les Quilles */
+        @keyframes flashAnim {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; filter: blur(0); }
+            100% { transform: translate(-50%, -50%) scale(40); opacity: 0; filter: blur(20px); }
+        }
+
+        /* Les Quilles version Tech */
         .pin {
             position: absolute;
             width: 20px; height: 70px;
             margin: -35px 0 0 -10px;
-            background: linear-gradient(to bottom, #eee 25%, #f00 25%, #f00 35%, #eee 35%);
+            background: linear-gradient(to bottom, #f8fafc 25%, var(--STAR-CYAN) 25%, var(--STAR-CYAN) 35%, #f8fafc 35%);
             border-radius: 40% 40% 50% 50% / 60% 60% 40% 40%;
-            box-shadow: inset -3px -3px 8px rgba(0,0,0,0.4);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
             transition: all 0.8s cubic-bezier(0.2, 0.5, 0.3, 1);
         }
 
-        /* Placement initial (triangle) */
-        .p1 { transform: translate(0, 0); z-index: 3; }
-        .p2 { transform: translate(25px, -20px); z-index: 2; }
-        .p3 { transform: translate(25px, 20px); z-index: 2; }
-        .p4 { transform: translate(50px, -40px); z-index: 1; }
-        .p5 { transform: translate(50px, 0); z-index: 1; }
-        .p6 { transform: translate(50px, 40px); z-index: 1; }
+        /* Placement initial */
+        .p1 { transform: translate(0, 0); }
+        .p2 { transform: translate(25px, -20px); }
+        .p3 { transform: translate(25px, 20px); }
+        .p4 { transform: translate(50px, -40px); }
+        .p5 { transform: translate(50px, 0); }
+        .p6 { transform: translate(50px, 40px); }
 
-        /* Éclatement des quilles */
-        .pin.scatter.p1 { transform: translate(200px, -200px) rotate(200deg); opacity: 0; }
-        .pin.scatter.p2 { transform: translate(280px, -300px) rotate(-150deg); opacity: 0; }
-        .pin.scatter.p3 { transform: translate(250px, 250px) rotate(120deg); opacity: 0; }
-        .pin.scatter.p4 { transform: translate(320px, -150px) rotate(280deg); opacity: 0; }
-        .pin.scatter.p5 { transform: translate(350px, 50px) rotate(-90deg); opacity: 0; }
-        .pin.scatter.p6 { transform: translate(300px, 320px) rotate(180deg); opacity: 0; }
+        /* Éclatement */
+        .pin.scatter.p1 { transform: translate(300px, -250px) rotate(200deg); opacity: 0; }
+        .pin.scatter.p2 { transform: translate(350px, -400px) rotate(-150deg); opacity: 0; }
+        .pin.scatter.p3 { transform: translate(320px, 350px) rotate(120deg); opacity: 0; }
+        .pin.scatter.p4 { transform: translate(450px, -200px) rotate(280deg); opacity: 0; }
+        .pin.scatter.p5 { transform: translate(500px, 50px) rotate(-90deg); opacity: 0; }
+        .pin.scatter.p6 { transform: translate(420px, 420px) rotate(180deg); opacity: 0; }
 
-        /* Logo Planète */
+        /* Logo Planète avec Pulsar Purple */
         .planet-logo {
             position: absolute;
             width: 140px; height: 140px;
             margin: -70px 0 0 -70px;
-            filter: drop-shadow(0 0 15px rgba(0, 180, 255, 0.7));
+            filter: drop-shadow(0 0 20px var(--PULSAR-PURPLE));
             z-index: 10;
-            animation: strikeAndLogo 2.2s ease-out forwards;
+            animation: strikeAndLogo 2.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
         }
 
         @keyframes strikeAndLogo {
-            0% { transform: translateX(-60vw) rotate(0deg) scale(0.6); }
-            45% { transform: translateX(0) rotate(720deg) scale(0.9); } /* Impact */
-            100% { transform: translateX(0) translateY(-140px) rotate(1080deg) scale(1.5); } /* Position Logo */
+            0% { transform: translateX(-70vw) rotate(0deg) scale(0.5); }
+            40% { transform: translateX(0) rotate(720deg) scale(0.9); } /* Impact */
+            100% { transform: translateX(0) translateY(-160px) rotate(1080deg) scale(1.4); } 
         }
+
+        /* Secousse */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-10px, 5px); }
+            40% { transform: translate(10px, -5px); }
+        }
+        .shake-active { animation: shake 0.3s ease-in-out; }
     </style>
 </head>
 <body>
 
     <div class="starfield" id="starfield"></div>
+    <div class="impact-flash" id="flash"></div>
 
     <div class="scene" id="mainScene">
         <div class="pin p1"></div>
@@ -91,28 +119,31 @@
     </div>
 
     <script>
-        // Création des étoiles
+        // Étoiles en Star-Cyan
         const sf = document.getElementById('starfield');
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 120; i++) {
             let s = document.createElement('div');
-            s.style.cssText = `position:absolute; width:2px; height:2px; background:white; border-radius:50%; top:${Math.random()*100}%; left:${Math.random()*100}%; opacity:${Math.random()}`;
+            let color = Math.random() > 0.8 ? '#06B6D4' : '#FFFFFF';
+            s.style.cssText = `position:absolute; width:1.5px; height:1.5px; background:${color}; border-radius:50%; top:${Math.random()*100}%; left:${Math.random()*100}%; opacity:${Math.random()}; box-shadow: 0 0 5px ${color};`;
             sf.appendChild(s);
         }
 
         window.onload = () => {
             const scene = document.getElementById('mainScene');
             const pins = document.querySelectorAll('.pin');
+            const flash = document.getElementById('flash');
 
-            // Moment de l'impact (45% de 2.2s ≈ 1s)
+            // Impact à 40% de 2.5s = 1000ms
             setTimeout(() => {
                 scene.classList.add('shake-active');
+                flash.classList.add('flash-active');
                 pins.forEach(p => p.classList.add('scatter'));
             }, 1000);
 
-            // Fin de l'animation
+            // Fin et Log
             setTimeout(() => {
                 console.log("A7");
-            }, 2200);
+            }, 2500);
         };
     </script>
 </body>
