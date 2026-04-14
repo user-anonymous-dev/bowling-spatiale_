@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGU - Bowling Spatiale</title>
+    <style>
+        :root {
+            --bg-color: #0d1117; /* Teinte GitHub Dark plus profonde */
+            --container-bg: #161b22;
+            --accent-color: #58a6ff;
+            --text-color: #c9d1d9;
+            --heading-color: #ffffff;
+            --border-color: #30363d;
+            --glow: 0 0 15px rgba(88, 166, 255, 0.2);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 850px;
+            background: var(--container-bg);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+
+        h1 { 
+            color: var(--accent-color); 
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: var(--glow);
+        }
+
+        h2 { 
+            color: var(--heading-color); 
+            border-left: 4px solid var(--accent-color); 
+            padding-left: 15px; 
+            margin-top: 35px;
+            font-size: 1.4em;
+        }
+        
+        p, li { margin-bottom: 15px; text-align: justify; }
+        
+        strong { color: var(--accent-color); }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 0.85em;
+            color: #8b949e;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 25px;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover { color: #79c0ff; text-shadow: var(--glow); }
+
+        em { color: #8b949e; font-style: normal; border-left: 2px solid #30363d; padding-left: 10px; display: block; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">← Retour au jeu</a>
+    
+    <header>
+        <h1>Conditions Générales d'Utilisation</h1>
+        <p>Dernière mise à jour : 14 avril 2026</p>
+    </header>
+
+    <section>
+        <h2>1. Présentation du Service</h2>
+        <p>Le site et le jeu <strong>Bowling Spatiale</strong> sont fournis à titre de divertissement. En accédant à ce site, vous acceptez sans réserve les présentes Conditions Générales d'Utilisation (CGU).</p>
+    </section>
+
+    <section>
+        <h2>2. Accès au Jeu</h2>
+        <p>L'accès au jeu est gratuit pour tout utilisateur disposant d'un accès à internet. Tous les frais supportés par l'utilisateur pour accéder au service (matériel informatique, logiciels, connexion Internet, etc.) sont à sa charge.</p>
+    </section>
+
+    <section>
+        <h2>3. Propriété Intellectuelle</h2>
+        <p>Les marques, logos, signes ainsi que tous les contenus du jeu (textes, images, sons, code source) font l'objet d'une protection par le Code de la propriété intellectuelle. Leur utilisation est <strong>autorisée uniquement dans un cadre non lucratif</strong>.</p>
+    </section>
+
+    <section>
+        <h2>4. Données Personnelles</h2>
+        <p>Dans le cadre de l'utilisation du site (notamment via l'usage d'IA mentionné sur notre page d'information), certaines données peuvent être collectées. Nous nous engageons à respecter la vie privée des utilisateurs conformément au RGPD.</p>
+        <em>Certaines données seront sauvegardées via des cookies ou le stockage local pour assurer le bon fonctionnement du jeu et la persistance de votre progression.</em>
+    </section>
+
+    <section>
+        <h2>5. Responsabilité</h2>
+        <p>Le développeur ne peut être tenu responsable d'un éventuel virus qui pourrait infecter l'ordinateur ou tout matériel informatique de l'internaute, suite à une utilisation, à l'accès, ou au téléchargement provenant de ce site.</p>
+        <p>La responsabilité du site ne peut être engagée en cas de force majeure ou du fait imprévisible et insurmontable d'un tiers.</p>
+    </section>
+
+    <section>
+        <h2>6. Évolution des conditions</h2>
+        <p>Le site se réserve le droit de modifier les clauses de ces conditions générales d'utilisation à tout moment et sans justification.</p>
+    </section>
+
+    <section>
+        <h2>7. Droit Applicable</h2>
+        <p>Le présent contrat est soumis à la législation française. En cas d'absence de résolution amiable d'un litige né entre les parties, les tribunaux français seront seuls compétents.</p>
+    </section>
+
+    <div class="footer">
+        &copy; 2026 Bowling Spatiale - Tous droits réservés.
+    </div>
+</div>
+
+</body>
+</html>
