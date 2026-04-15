@@ -1,12 +1,6 @@
 /**
- * SPATIAL BOWLING - V9 (DEBUG & POWER)
- * Si c'est noir, vérifie la console (F12)
+ * SPATIAL BOWLING - V10 (PRECISION & IMPACT)
  */
-
-// On s'assure que Matter est chargé
-if (typeof Matter === 'undefined') {
-    console.error("ERREUR : Matter.js n'est pas chargé ! Vérifie ton fichier HTML.");
-}
 
 const { Engine, Bodies, Composite, Body, Events, Vector } = Matter;
 
@@ -16,12 +10,6 @@ engine.world.gravity.y = 0;
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 document.body.appendChild(canvas);
-
-// Style pour que le canvas soit bien visible
-canvas.style.position = "fixed";
-canvas.style.top = "0";
-canvas.style.left = "0";
-canvas.style.background = "#050508";
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -38,38 +26,34 @@ let gameState = "WAITING";
 let gameResult = "";
 let timerResult = 0;
 
-console.log("Moteur physique prêt.");
-
 function setupScene(data) {
-    console.log("Initialisation scène :", data);
     Composite.clear(engine.world);
-    particles = [];
-    astreTrail = [];
-    gameResult = "";
+    particles = []; astreTrail = []; gameResult = "";
     gameState = "WAITING";
     
-    // 1. L'ASTRE
-    const radius = Math.max(25, Math.min(data.kg / 2.5, 90));
-    currentAstre = Bodies.circle(150, window.innerHeight / 2, radius, {
-        mass: data.kg, 
-        restitution: 0.5, 
-        frictionAir: 0.005,
-        label: "Astre"
+    // 1. L'ASTRE (Placé au centre vertical)
+    const radius = Math.max(30, Math.min(data.kg / 2.2, 100));
+    currentAstre = Bodies.circle(100, canvas.height / 2, radius, {
+        mass: data.kg, restitution: 0.4, frictionAir: 0.005
     });
 
-    // 2. LES QUILLES (Le mur Z)
+    // 2. LES QUILLES (Recentrées pour être impossibles à louper)
     currentPins = [];
-    const pinCount = Math.min(10 + Math.floor(data.z / 15), 40);
-    // Résistance augmentée pour le challenge
-    const pinMass = (data.kg / 8) * (1 + (data.z / 100)); 
+    const pinCount = Math.min(15 + Math.floor(data.z / 500), 50); // On limite le nombre pour éviter le lag
+    const pinMass = (data.kg / 5) * (1 + (data.z / 1000)); 
+
+    const startX = canvas.width * 0.6;
+    const centerY = canvas.height / 2;
 
     for (let i = 0; i < pinCount; i++) {
+        // Formation en triangle mais resserrée sur l'axe Y
         let row = Math.floor(Math.sqrt(2 * i + 0.25) - 0.5);
         let col = i - (row * (row + 1) / 2);
+        
         const pin = Bodies.rectangle(
-            window.innerWidth * 0.7 + (row * 45), 
-            window.innerHeight / 2 + (col * 55) - (row * 27),
-            20, 45, { restitution: 0.4, friction: 0.5 }
+            startX + (row * 35), 
+            centerY + (col * 45) - (row * 22.5),
+            20, 42, { restitution: 0.3, friction: 0.8 }
         );
         Body.setMass(pin, pinMass);
         currentPins.push(pin);
@@ -77,27 +61,29 @@ function setupScene(data) {
     
     Composite.add(engine.world, [currentAstre, ...currentPins]);
 
-    // 3. LANCEMENT
+    // 3. LANCEMENT (Visée laser sur le centre des quilles)
     setTimeout(() => {
         gameState = "LAUNCHED";
-        const forceMagnitude = (data.lvl * data.kg) / 2500;
+        // Force calculée pour être plus impactante
+        const forceMagnitude = (data.lvl * data.kg) / 4000;
+        
+        // On pousse l'astre pile vers le centre des quilles
         Body.applyForce(currentAstre, currentAstre.position, { x: forceMagnitude, y: 0 });
         timerResult = Date.now() + 5000;
     }, 800);
 }
 
-// Détection des chocs pour les particules
+// Rendu des explosions d'impact
 Events.on(engine, 'collisionStart', (event) => {
     event.pairs.forEach(pair => {
-        const impactPos = pair.collision.supports[0];
-        if (impactPos) {
-            for (let i = 0; i < 5; i++) {
+        const pos = pair.collision.supports[0];
+        if (pos) {
+            for (let i = 0; i < 8; i++) {
                 particles.push({
-                    x: impactPos.x, y: impactPos.y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8,
-                    life: 1,
-                    color: '#22D3EE'
+                    x: pos.x, y: pos.y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1, color: '#22D3EE'
                 });
             }
         }
@@ -106,70 +92,64 @@ Events.on(engine, 'collisionStart', (event) => {
 
 function draw() {
     Engine.update(engine, 16.66);
-
-    // Effacement
     ctx.fillStyle = '#050508';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Traînée
-    if (currentAstre && gameState !== "ENDED") {
+    if (currentAstre && gameState === "LAUNCHED") {
         astreTrail.push({ x: currentAstre.position.x, y: currentAstre.position.y });
         if (astreTrail.length > 20) astreTrail.shift();
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(34, 211, 238, 0.3)';
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.4)';
         ctx.lineWidth = currentAstre.circleRadius;
-        astreTrail.forEach((p, i) => ctx.lineTo(p.x, p.y));
+        astreTrail.forEach(p => ctx.lineTo(p.x, p.y));
         ctx.stroke();
+    }
+
+    // Dessin Objets
+    currentPins.forEach(pin => {
+        const isDown = Math.abs(pin.angle) > 1.0;
+        ctx.save();
+        ctx.translate(pin.position.x, pin.position.y);
+        ctx.rotate(pin.angle);
+        ctx.fillStyle = isDown ? '#334155' : '#8B5CF6';
+        ctx.fillRect(-10, -21, 20, 42);
+        ctx.restore();
+    });
+
+    if (currentAstre) {
+        ctx.save();
+        ctx.translate(currentAstre.position.x, currentAstre.position.y);
+        ctx.shadowBlur = 15; ctx.shadowColor = '#22D3EE';
+        ctx.fillStyle = '#22D3EE';
+        ctx.beginPath(); ctx.arc(0, 0, currentAstre.circleRadius, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
     }
 
     // Particules
     particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.03;
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
+        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+        ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, 2, 2);
         if (p.life <= 0) particles.splice(i, 1);
     });
     ctx.globalAlpha = 1;
 
-    // Quilles
-    currentPins.forEach(pin => {
-        const isDown = Math.abs(pin.angle) > 0.6;
-        ctx.save();
-        ctx.translate(pin.position.x, pin.position.y);
-        ctx.rotate(pin.angle);
-        ctx.fillStyle = isDown ? '#334155' : '#8B5CF6';
-        ctx.fillRect(-10, -22, 20, 44);
-        ctx.restore();
-    });
-
-    // Astre
-    if (currentAstre) {
-        ctx.save();
-        ctx.translate(currentAstre.position.x, currentAstre.position.y);
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = '#22D3EE';
-        ctx.fillStyle = '#22D3EE';
-        ctx.beginPath();
-        ctx.arc(0, 0, currentAstre.circleRadius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
-
-    // UI Score
+    // Logique de fin
     if (gameState === "LAUNCHED" && Date.now() > timerResult) {
-        let fallen = currentPins.filter(p => Math.abs(p.angle) > 0.6 || p.position.x > window.innerWidth * 0.8).length;
+        let fallen = currentPins.filter(p => Math.abs(p.angle) > 1.0 || p.position.x > canvas.width * 0.8).length;
         const ratio = fallen / currentPins.length;
-        gameResult = ratio >= 0.9 ? "STRIKE !" : (ratio > 0.4 ? "BIEN !" : "ÉCHEC");
+        if (ratio >= 0.9) gameResult = "STRIKE !";
+        else if (ratio > 0.1) gameResult = "IMPACT !";
+        else gameResult = "LOUPE...";
         gameState = "ENDED";
     }
 
     if (gameState === "ENDED") {
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.textAlign = "center";
-        ctx.fillStyle = "white";
-        ctx.font = "bold 50px Arial";
+        ctx.textAlign = "center"; ctx.fillStyle = "white";
+        ctx.font = "bold 50px sans-serif";
         ctx.fillText(gameResult, canvas.width / 2, canvas.height / 2);
     }
 
@@ -183,6 +163,3 @@ window.addEventListener('message', (e) => {
 });
 
 draw();
-
-// Test immédiat (Lvl 1 vs Z458)
-setupScene({ kg: 120, type: 'Terre', lvl: 1, z: 458 });
