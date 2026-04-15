@@ -2,189 +2,168 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Bowling Spatial Quantum</title>
+    <title>Spatial Bowling - Collision Fix</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #1E293B; --cyan: #06B6D4; --orange: #F59E0B; --purple: #8B5CF6;
-        }
-        body, html { margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Orbitron', sans-serif; }
-        canvas { position: absolute; top: 0; left: 0; }
+        :root { --bg: #1E293B; --cyan: #06B6D4; --orange: #F59E0B; --purple: #8B5CF6; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Orbitron', sans-serif; }
+        canvas { display: block; filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.2)); }
         
-        /* HUD de cockpit */
         #hud {
-            position: absolute; top: 20px; left: 20px; z-index: 100;
-            border-left: 4px solid var(--cyan); padding-left: 15px;
-            pointer-events: none; opacity: 0; transition: opacity 0.5s;
+            position: absolute; top: 20px; left: 20px; color: white;
+            border-left: 3px solid var(--cyan); padding-left: 15px;
+            pointer-events: none; text-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
-        .stat { margin-bottom: 10px; }
-        .label { font-size: 10px; color: var(--cyan); text-transform: uppercase; display: block; }
-        .val { font-size: 18px; color: white; font-weight: 900; }
-        .val-z { color: var(--purple); text-shadow: 0 0 10px var(--purple); }
-
-        /* Effet de scanline pour le style rétro-futuriste */
-        body::after {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 4px, 3px 100%; pointer-events: none; z-index: 1000;
-        }
+        .label { font-size: 10px; color: var(--cyan); text-transform: uppercase; }
+        .val { font-size: 18px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div class="stat"><span class="label">Orbit Mass</span><span id="ui-kg" class="val">0</span></div>
-    <div class="stat"><span class="label">Object Type</span><span id="ui-type" class="val">None</span></div>
-    <div class="stat"><span class="label">Velocity Lvl</span><span id="ui-lvl" class="val">0</span></div>
-    <div class="stat"><span class="label">Target Zone</span><span id="ui-z" class="val val-z">Z-0</span></div>
+    <div class="label">Masse</div><div id="u-kg" class="val">-</div>
+    <div class="label">Astre</div><div id="u-type" class="val">-</div>
+    <div class="label">Vitesse</div><div id="u-lvl" class="val">-</div>
+    <div class="label">Quilles</div><div id="u-z" class="val" style="color:var(--purple)">-</div>
 </div>
 
 <script>
-/**
- * MODULE 1 : MOTEUR PHYSIQUE (Matter.js)
- */
-const Physics = {
-    engine: Matter.Engine.create({ gravity: { x: 0, y: 0 } }), // Gravité zéro par défaut
-    init() {
-        const runner = Matter.Runner.create();
-        Matter.Runner.run(runner, this.engine);
-    },
-    clear() {
-        Matter.Composite.clear(this.engine.world, false);
-    }
-};
+// --- CONFIGURATION DU MOTEUR ---
+const { Engine, Render, Runner, Bodies, Composite, Body, Events, Vector } = Matter;
 
-/**
- * MODULE 2 : SYSTÈME DE PARTICULES & VISUELS
- */
-const FX = {
-    canvas: document.createElement('canvas'),
-    ctx: null,
-    particles: [],
-    init() {
-        this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        document.body.appendChild(this.canvas);
-        this.animate();
-    },
-    createExplosion(x, y, color) {
-        for(let i=0; i<15; i++) {
-            this.particles.push({
-                x, y, 
-                vx: (Math.random() - 0.5) * 10, 
-                vy: (Math.random() - 0.5) * 10,
-                life: 1.0, color
-            });
-        }
-    },
-    animate() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-            this.ctx.fillStyle = p.color;
-            this.ctx.globalAlpha = p.life;
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
-            this.ctx.fill();
-            if(p.life <= 0) this.particles.splice(i, 1);
-        });
-        requestAnimationFrame(() => this.animate());
-    }
-};
+const engine = Engine.create();
+// On augmente la précision pour éviter que les objets traversent les murs
+engine.positionIterations = 10; 
+engine.velocityIterations = 10;
+engine.world.gravity.y = 0; // Gravité zéro par défaut (espace)
 
-/**
- * MODULE 3 : LOGIQUE DE JEU
- */
-const Game = {
-    astre: null,
-    quilles: [],
-    
-    launch(data) {
-        Physics.clear();
-        document.getElementById('hud').style.opacity = 1;
-        
-        // Mise à jour UI
-        document.getElementById('ui-kg').innerText = data.kg + "kg";
-        document.getElementById('ui-type').innerText = data.type;
-        document.getElementById('ui-lvl').innerText = data.lvl;
-        document.getElementById('ui-z').innerText = "Z" + data.z;
-
-        // Création des Quilles (Z)
-        const startX = window.innerWidth * 0.75;
-        const startY = window.innerHeight * 0.5;
-        for(let i=0; i<data.z; i++) {
-            const q = Matter.Bodies.rectangle(
-                startX + (Math.floor(i/3) * 40), 
-                startY + ((i%3) * 50) - 50, 
-                20, 50, {
-                    restitution: 0.8, friction: 0.1,
-                    render: { fillStyle: '#8B5CF6' }
-                }
-            );
-            this.quilles.push(q);
-            Matter.Composite.add(Physics.engine.world, q);
-        }
-
-        // Création de l'Astre (Masse & Taille basées sur kg)
-        const radius = Math.min(Math.max(data.kg / 4, 20), 100);
-        const name = data.type.toLowerCase().replace(/\s+/g, '-');
-        const imgUrl = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${name}.png`;
-        
-        this.astre = Matter.Bodies.circle(100, window.innerHeight/2, radius, {
-            mass: data.kg / 5,
-            render: {
-                sprite: { 
-                    texture: imgUrl,
-                    xScale: (radius*2)/100, yScale: (radius*2)/100 
-                }
-            }
-        });
-        
-        // Fallback image
-        const img = new Image();
-        img.src = imgUrl;
-        img.onerror = () => this.astre.render.sprite.texture = 'https://user-anonymous-dev.github.io/bowling-spatiale_/picture/template-astres.png';
-
-        Matter.Composite.add(Physics.engine.world, this.astre);
-
-        // Propulsion (Basée sur lvl)
-        const force = (data.lvl / 500) * this.astre.mass;
-        setTimeout(() => {
-            Matter.Body.applyForce(this.astre, this.astre.position, { x: force, y: 0 });
-        }, 500);
-
-        // Collision Check pour FX
-        Matter.Events.on(Physics.engine, 'collisionStart', (event) => {
-            event.pairs.forEach(pair => {
-                FX.createExplosion(pair.collision.supports[0].x, pair.collision.supports[0].y, '#06B6D4');
-            });
-        });
-    }
-};
-
-// Initialisation
-Physics.init();
-FX.init();
-
-// Rendu Matter.js (Background)
-const render = Matter.Render.create({
+const render = Render.create({
     element: document.body,
-    engine: Physics.engine,
+    engine: engine,
     options: {
-        width: window.innerWidth, height: window.innerHeight,
-        wireframes: false, background: 'transparent'
+        width: window.innerWidth,
+        height: window.innerHeight,
+        wireframes: false,
+        background: '#1E293B'
     }
 });
-Matter.Render.run(render);
 
-// Listener Message
+Render.run(render);
+const runner = Runner.create();
+Runner.run(runner, engine);
+
+// --- LIMITES DE LA PISTE (Murs invisibles pour rebonds) ---
+const wallOptions = { isStatic: true, render: { visible: false }, restitution: 0.5 };
+const walls = [
+    Bodies.rectangle(window.innerWidth/2, 0, window.innerWidth, 20, wallOptions), // Haut
+    Bodies.rectangle(window.innerWidth/2, window.innerHeight, window.innerWidth, 20, wallOptions), // Bas
+    Bodies.rectangle(window.innerWidth, window.innerHeight/2, 20, window.innerHeight, wallOptions) // Fond
+];
+Composite.add(engine.world, walls);
+
+// --- GESTION DU MESSAGE ---
 window.addEventListener('message', (e) => {
     const regex = /(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i;
     const m = typeof e.data === 'string' ? e.data.match(regex) : null;
-    if (m) Game.launch({ kg: parseInt(m[1]), type: m[2].trim(), lvl: parseInt(m[3]), z: parseInt(m[4]) });
+    if (m) {
+        initGame({ kg: parseInt(m[1]), type: m[2].trim(), lvl: parseInt(m[3]), z: parseInt(m[4]) });
+    }
+});
+
+function initGame(data) {
+    // Nettoyage (sauf les murs)
+    const allBodies = Composite.allBodies(engine.world);
+    allBodies.forEach(b => { if(!b.isStatic) Composite.remove(engine.world, b); });
+
+    // UI
+    document.getElementById('u-kg').innerText = data.kg + "kg";
+    document.getElementById('u-type').innerText = data.type;
+    document.getElementById('u-lvl').innerText = data.lvl;
+    document.getElementById('u-z').innerText = "Z" + data.z;
+
+    // 1. GÉNÉRATION DES QUILLES (Formation triangle)
+    const pins = [];
+    const pinCount = Math.min(data.z, 20);
+    const startX = window.innerWidth - 200;
+    const startY = window.innerHeight / 2;
+    
+    for (let i = 0; i < pinCount; i++) {
+        let row = Math.floor(Math.sqrt(2 * i + 0.25) - 0.5);
+        let col = i - (row * (row + 1) / 2);
+        
+        const pin = Bodies.rectangle(
+            startX + (row * 35), 
+            startY + (col * 45) - (row * 22), 
+            22, 45, {
+                restitution: 0.4,
+                friction: 0.2,
+                density: 0.005,
+                render: { 
+                    fillStyle: '#8B5CF6',
+                    strokeStyle: '#FFFFFF',
+                    lineWidth: 2
+                }
+            }
+        );
+        pins.push(pin);
+    }
+    Composite.add(engine.world, pins);
+
+    // 2. GÉNÉRATION DE L'ASTRE
+    // Taille basée sur KG (échelle log pour éviter les planètes trop géantes)
+    const radius = Math.max(25, Math.min(data.kg / 4, 90));
+    const name = data.type.toLowerCase().replace(/\s+/g, '-');
+    const imgUrl = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${name}.png`;
+
+    const astre = Bodies.circle(100, window.innerHeight / 2, radius, {
+        mass: data.kg / 5,
+        restitution: 0.6,
+        frictionAir: 0.01,
+        render: {
+            sprite: {
+                texture: imgUrl,
+                xScale: (radius * 2.2) / 100,
+                yScale: (radius * 2.2) / 100
+            }
+        }
+    });
+
+    // Fallback image
+    const img = new Image();
+    img.src = imgUrl;
+    img.onerror = () => astre.render.sprite.texture = 'https://user-anonymous-dev.github.io/bowling-spatiale_/picture/template-astres.png';
+
+    Composite.add(engine.world, astre);
+
+    // 3. LANCEMENT PHYSIQUE
+    // On applique une impulsion vectorielle basée sur le LVL
+    const speed = data.lvl / 10;
+    setTimeout(() => {
+        Body.setVelocity(astre, { x: speed, y: (Math.random() - 0.5) * 2 });
+        // Rotation initiale pour le style
+        Body.setAngularVelocity(astre, 0.1);
+    }, 500);
+}
+
+// 4. EFFETS D'IMPACT (Particules)
+Events.on(engine, 'collisionStart', (event) => {
+    event.pairs.forEach(pair => {
+        const p = pair.collision.supports[0];
+        if (p) {
+            // Ici tu pourrais ajouter un système de particules canvas
+            // Pour l'instant, on fait flasher la quille
+            if (pair.bodyB.render) {
+                pair.bodyB.render.fillStyle = '#06B6D4';
+                setTimeout(() => { if(pair.bodyB.render) pair.bodyB.render.fillStyle = '#8B5CF6'; }, 100);
+            }
+        }
+    });
+});
+
+window.addEventListener('resize', () => {
+    render.canvas.width = window.innerWidth;
+    render.canvas.height = window.innerHeight;
 });
 </script>
 </body>
