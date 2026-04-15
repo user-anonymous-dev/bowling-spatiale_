@@ -1,231 +1,177 @@
-// --- CONFIGURATION AVANCÉE DU MOTEUR ---
-const { Engine, Render, Runner, Bodies, Composite, Body, Events, Vector, Bounds } = Matter;
-
-const engine = Engine.create({
-    positionIterations: 16, // Précision extrême pour éviter le clipping
-    velocityIterations: 16,
-    constraintIterations: 8
-});
-engine.world.gravity.y = 0; // Microgravité spatiale
-engine.world.gravity.x = 0;
-
-const render = Render.create({
-    element: document.body,
-    engine: engine,
-    options: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        wireframes: false,
-        background: 'transparent',
-        hasBounds: true // Permet les effets de caméra si besoin
-    }
-});
-
-Render.run(render);
-const runner = Runner.create();
-Runner.run(runner, engine);
-
-// --- FILTRES DE COLLISION (Optimisation) ---
-const CAT_WALL = 0x0001, CAT_PIN = 0x0002, CAT_ASTRE = 0x0004;
-
-// --- GESTION DES EFFETS VISUELS CUSTOM ---
-const ctx = render.context;
+// --- VARIABLES GLOBALES POUR LES EFFETS DE COLLISION ---
 let particles = [];
-let astreTrail = [];
-let bulletTimeTimeout = null;
-let currentAstre = null;
+let shockwaves = [];
+let screenShake = { x: 0, y: 0, decay: 0 };
+let originalBounds = null;
 
-// --- LIMITES DE LA PISTE ---
-const thickness = 100;
-const wallOptions = { 
-    isStatic: true, 
-    restitution: 0.9, // Rebond fort
-    friction: 0.1,
-    collisionFilter: { category: CAT_WALL }
-};
-const walls = [
-    Bodies.rectangle(window.innerWidth/2, -thickness/2, window.innerWidth * 2, thickness, wallOptions),
-    Bodies.rectangle(window.innerWidth/2, window.innerHeight + thickness/2, window.innerWidth * 2, thickness, wallOptions),
-    Bodies.rectangle(window.innerWidth + thickness/2, window.innerHeight/2, thickness, window.innerHeight * 2, wallOptions),
-    Bodies.rectangle(-thickness/2, window.innerHeight/2, thickness, window.innerHeight * 2, wallOptions)
-];
-Composite.add(engine.world, walls);
-
-// --- ÉCOUTEUR DE MESSAGES ---
-window.addEventListener('message', (e) => {
-    const regex = /(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i;
-    const m = typeof e.data === 'string' ? e.data.match(regex) : null;
-    if (m) initGame({ kg: parseInt(m[1]), type: m[2].trim(), lvl: parseInt(m[3]), z: parseInt(m[4]) });
-});
-
-function initGame(data) {
-    // Reset complexe
-    const allBodies = Composite.allBodies(engine.world);
-    allBodies.forEach(b => { if(!b.isStatic) Composite.remove(engine.world, b); });
-    particles = [];
-    astreTrail = [];
-    engine.timing.timeScale = 1; // Reset bullet time
-
-    // MAJ de l'UI
-    document.getElementById('u-kg').innerText = data.kg + " kg";
-    document.getElementById('u-type').innerText = data.type;
-    document.getElementById('u-lvl').innerText = "Lvl " + data.lvl;
-    document.getElementById('u-z').innerText = "Z" + data.z;
-
-    // 1. GÉNÉRATION DES QUILLES COMPLEXES
-    const pins = [];
-    const pinCount = Math.min(data.z, 50);
-    const startX = window.innerWidth * 0.70;
-    const startY = window.innerHeight / 2;
-    
-    for (let i = 0; i < pinCount; i++) {
-        let row = Math.floor(Math.sqrt(2 * i + 0.25) - 0.5);
-        let col = i - (row * (row + 1) / 2);
-        
-        let px = startX + (row * 42);
-        let py = startY + (col * 50) - (row * 25);
-
-        // Quille composée : Base lourde rectangulaire + Tête ronde
-        const base = Bodies.rectangle(px, py + 8, 20, 24, { render: { visible: false } });
-        const head = Bodies.circle(px, py - 12, 10, { render: { visible: false } });
-        
-        const pin = Body.create({
-            parts: [base, head], // Centre de masse dynamique
-            restitution: 0.65,
-            frictionAir: 0.01,
-            density: 0.002,
-            collisionFilter: { category: CAT_PIN, mask: CAT_WALL | CAT_PIN | CAT_ASTRE },
-            render: {
-                fillStyle: '#8B5CF6',
-                strokeStyle: '#C4B5FD',
-                lineWidth: 2
-            }
-        });
-        pins.push(pin);
-    }
-    Composite.add(engine.world, pins);
-
-    // 2. GÉNÉRATION DE L'ASTRE (Boule)
-    const radius = Math.max(25, Math.min(data.kg / 2.5, 120));
-    const name = data.type.toLowerCase().replace(/\s+/g, '-');
-    const imgUrl = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${name}.png`;
-
-    currentAstre = Bodies.circle(window.innerWidth * 0.1, window.innerHeight / 2, radius, {
-        mass: data.kg * 3,
-        density: 0.1,
-        restitution: 0.3,
-        frictionAir: 0.001,
-        collisionFilter: { category: CAT_ASTRE, mask: CAT_WALL | CAT_PIN },
-        render: { sprite: { texture: imgUrl, xScale: (radius * 2.2) / 100, yScale: (radius * 2.2) / 100 } }
-    });
-
-    const img = new Image();
-    img.src = imgUrl;
-    img.onerror = () => { if (currentAstre.render.sprite) currentAstre.render.sprite.texture = 'https://user-anonymous-dev.github.io/bowling-spatiale_/picture/template-astres.png'; };
-
-    Composite.add(engine.world, currentAstre);
-
-    // 3. PROPULSION (Avec effet de spin)
-    const forceMagnitude = (data.lvl * currentAstre.mass) / 3000;
-    setTimeout(() => {
-        Body.applyForce(currentAstre, currentAstre.position, { 
-            x: forceMagnitude, 
-            y: (Math.random() - 0.5) * (forceMagnitude * 0.1)
-        });
-        Body.setAngularVelocity(currentAstre, 0.2);
-    }, 500);
-}
-
-// --- PHYSIQUE CUSTOM : GRAVITÉ DE L'ASTRE ---
-Events.on(engine, 'beforeUpdate', () => {
-    if (!currentAstre) return;
-    
-    // Si l'astre est assez lourd, il attire les quilles proches
-    const allBodies = Composite.allBodies(engine.world);
-    allBodies.forEach(body => {
-        if (body.collisionFilter.category === CAT_PIN) {
-            const distanceVector = Vector.sub(currentAstre.position, body.position);
-            const distanceSq = Vector.magnitudeSquared(distanceVector);
-            
-            // Rayon d'attraction
-            if (distanceSq < 200000 && distanceSq > 1000) {
-                const force = Vector.mult(Vector.normalise(distanceVector), (currentAstre.mass * 0.000005) / distanceSq);
-                Body.applyForce(body, body.position, force);
-            }
-        }
-    });
-
-    // Enregistrement de la position pour la traînée
-    if (Vector.magnitude(currentAstre.velocity) > 2) {
-        astreTrail.push({ x: currentAstre.position.x, y: currentAstre.position.y, alpha: 1 });
-        if (astreTrail.length > 20) astreTrail.shift(); // Longueur max de la traînée
-    }
-});
-
-// --- GESTION DES IMPACTS (Bullet Time & Particules) ---
+// --- GESTION ULTRA-COMPLEXE DES COLLISIONS ---
 Events.on(engine, 'collisionStart', (event) => {
     event.pairs.forEach(pair => {
-        const isPin = (pair.bodyA.collisionFilter.category === CAT_PIN || pair.bodyB.collisionFilter.category === CAT_PIN);
-        const isAstre = (pair.bodyA === currentAstre || pair.bodyB === currentAstre);
+        const bodyA = pair.bodyA;
+        const bodyB = pair.bodyB;
         
-        // Impact majeur (Boule vs Quille)
-        if (isPin && isAstre) {
-            const impactVelocity = Vector.magnitude(Vector.sub(pair.bodyA.velocity, pair.bodyB.velocity));
-            
-            // Déclenchement d'un système de particules
-            if (impactVelocity > 5) spawnParticles(pair.collision.supports[0], impactVelocity);
+        // Calcul de la vélocité relative exacte au point d'impact
+        const relVelocity = Vector.sub(bodyA.velocity, bodyB.velocity);
+        const speedSq = Vector.magnitudeSquared(relVelocity);
+        
+        // Approximation de la masse effective (pour éviter des énergies infinies avec les murs statiques)
+        const massA = bodyA.isStatic ? bodyB.mass : bodyA.mass;
+        const massB = bodyB.isStatic ? bodyA.mass : bodyB.mass;
+        const effectiveMass = (massA * massB) / (massA + massB);
+        
+        // Calcul de l'Énergie Cinétique (Ek = 1/2 * m * v^2)
+        const kineticEnergy = 0.5 * effectiveMass * speedSq;
 
-            // Déclenchement du "Bullet Time" si impact extrêmement fort
-            if (impactVelocity > 15) {
-                engine.timing.timeScale = 0.2; // Ralenti à 20%
-                if (bulletTimeTimeout) clearTimeout(bulletTimeTimeout);
-                bulletTimeTimeout = setTimeout(() => {
-                    // Retour progressif à la vitesse normale (simplifié)
-                    engine.timing.timeScale = 1; 
-                }, 800); // 800ms en temps réel
-            }
+        // On ignore les micro-collisions (objets au repos)
+        if (kineticEnergy < 10) return;
+
+        // Récupération du point de contact exact
+        const contactPoint = pair.collision.supports[0] || pair.collision.supports[1];
+        if (!contactPoint) return;
+
+        // --- 1. MODIFICATEURS PHYSIQUES DYNAMIQUES ---
+        
+        // Transfert de friction angulaire (Effet Magnus / Spin)
+        // Si les objets se frottent fortement, on augmente leur vélocité angulaire
+        const tangentVelocity = Vector.cross(relVelocity, pair.collision.normal);
+        if (Math.abs(tangentVelocity) > 2) {
+            if (!bodyA.isStatic) Body.setAngularVelocity(bodyA, bodyA.angularVelocity + (tangentVelocity * 0.01));
+            if (!bodyB.isStatic) Body.setAngularVelocity(bodyB, bodyB.angularVelocity - (tangentVelocity * 0.01));
+        }
+
+        // --- 2. RÉACTIONS VISUELLES BASÉES SUR L'ÉNERGIE ---
+        
+        // A. Étincelles classiques (Énergie Moyenne : > 50)
+        if (kineticEnergy > 50) {
+            spawnParticles(contactPoint, relVelocity, Math.min(kineticEnergy / 10, 40), 'spark');
+        }
+
+        // B. Choc Violent : Ondes de choc, Débris et Bullet Time (Énergie Haute : > 500)
+        if (kineticEnergy > 500) {
+            // Création d'une onde de choc
+            shockwaves.push({ x: contactPoint.x, y: contactPoint.y, radius: 10, alpha: 1, force: kineticEnergy / 100 });
+            
+            // Génération de gros débris physiques
+            spawnParticles(contactPoint, relVelocity, Math.min(kineticEnergy / 50, 15), 'debris');
+
+            // Screen Shake proportionnel à l'impact
+            triggerScreenShake(kineticEnergy / 100);
+
+            // Bullet Time dynamique
+            const timeScaleTarget = Math.max(0.1, 1 - (kineticEnergy / 5000));
+            engine.timing.timeScale = timeScaleTarget;
+            
+            if (bulletTimeTimeout) clearTimeout(bulletTimeTimeout);
+            bulletTimeTimeout = setTimeout(() => {
+                // Interpolation douce pour revenir au temps réel
+                let interval = setInterval(() => {
+                    engine.timing.timeScale += 0.05;
+                    if (engine.timing.timeScale >= 1) {
+                        engine.timing.timeScale = 1;
+                        clearInterval(interval);
+                    }
+                }, 50);
+            }, 300); // Durée du ralenti
         }
     });
 });
 
-// --- RENDU CUSTOM (Canvas API directe) ---
-function spawnParticles(point, force) {
-    if (!point) return;
-    const count = Math.min(Math.floor(force * 2), 30);
+// --- SYSTÈME DE PARTICULES & EFFETS ---
+function spawnParticles(point, relVel, count, type) {
     for (let i = 0; i < count; i++) {
+        // Dispersion conique basée sur le vecteur de collision
+        const angleOffset = (Math.random() - 0.5) * Math.PI; // 180 degrés de dispersion
+        const speed = Math.random() * (type === 'debris' ? 8 : 15);
+        
+        // Rotation du vecteur vitesse
+        const vx = relVel.x * Math.cos(angleOffset) - relVel.y * Math.sin(angleOffset);
+        const vy = relVel.x * Math.sin(angleOffset) + relVel.y * Math.cos(angleOffset);
+        
+        // Normalisation et application de la vitesse
+        const norm = Math.sqrt(vx*vx + vy*vy) || 1;
+
         particles.push({
             x: point.x, y: point.y,
-            vx: (Math.random() - 0.5) * force,
-            vy: (Math.random() - 0.5) * force,
+            vx: (vx / norm) * speed * 0.5,
+            vy: (vy / norm) * speed * 0.5,
             life: 1.0,
-            size: Math.random() * 4 + 1
+            decay: type === 'debris' ? 0.01 : 0.03 + (Math.random() * 0.02),
+            size: type === 'debris' ? Math.random() * 6 + 3 : Math.random() * 3 + 1,
+            color: type === 'debris' ? '#8B5CF6' : '#06B6D4' // Débris violets (quilles), Étincelles cyans
         });
     }
 }
 
+function triggerScreenShake(intensity) {
+    const cappedIntensity = Math.min(intensity, 25); // Limite le tremblement max
+    screenShake.x = (Math.random() - 0.5) * cappedIntensity;
+    screenShake.y = (Math.random() - 0.5) * cappedIntensity;
+    screenShake.decay = cappedIntensity;
+    if (!originalBounds) originalBounds = { min: { x: 0, y: 0 }, max: { x: window.innerWidth, y: window.innerHeight } };
+}
+
+// --- BOUCLE DE RENDU CUSTOM (Moteur Graphique Indépendant) ---
 Events.on(render, 'afterRender', () => {
-    // 1. Dessiner la traînée de l'astre
+    // 1. Gestion du Screen Shake (Déplacement de la caméra)
+    if (screenShake.decay > 0.1) {
+        screenShake.x = (Math.random() - 0.5) * screenShake.decay;
+        screenShake.y = (Math.random() - 0.5) * screenShake.decay;
+        screenShake.decay *= 0.9; // Amortissement
+
+        Bounds.translate(render.bounds, { x: screenShake.x, y: screenShake.y });
+    } else if (originalBounds) {
+        // Retour progressif à la normale
+        Bounds.update(render.bounds, [originalBounds.min, originalBounds.max]);
+    }
+
+    // 2. Traînée de l'astre (Code précédent conservé)
+    if (currentAstre && Vector.magnitude(currentAstre.velocity) > 2) {
+        astreTrail.push({ x: currentAstre.position.x, y: currentAstre.position.y, alpha: 1 });
+        if (astreTrail.length > 25) astreTrail.shift();
+    }
     if (astreTrail.length > 1) {
         ctx.beginPath();
         ctx.moveTo(astreTrail[0].x, astreTrail[0].y);
         for (let i = 1; i < astreTrail.length; i++) {
             ctx.lineTo(astreTrail[i].x, astreTrail[i].y);
-            astreTrail[i].alpha -= 0.05; // Fade out
+            astreTrail[i].alpha -= 0.04;
         }
         ctx.strokeStyle = `rgba(6, 182, 212, ${astreTrail[astreTrail.length-1].alpha})`;
-        ctx.lineWidth = currentAstre ? currentAstre.circleRadius * 0.8 : 10;
+        ctx.lineWidth = currentAstre ? currentAstre.circleRadius * 0.6 : 10;
         ctx.lineCap = 'round';
         ctx.stroke();
-        // Nettoyage des vieux segments
         astreTrail = astreTrail.filter(t => t.alpha > 0);
     }
 
-    // 2. Dessiner et mettre à jour les particules (étincelles d'impact)
+    // 3. Rendu des Ondes de Choc (Shockwaves)
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+        let sw = shockwaves[i];
+        sw.radius += sw.force * 2; // Expansion de l'onde
+        sw.alpha -= 0.05;          // Dissipation
+        
+        if (sw.alpha <= 0) {
+            shockwaves.splice(i, 1);
+            continue;
+        }
+
+        ctx.globalAlpha = sw.alpha;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = sw.force * sw.alpha;
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.radius, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+
+    // 4. Rendu des Particules (Étincelles & Débris)
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
+        
+        // Physique des particules (Inertie + Légère friction spatiale)
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.03;
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+        p.life -= p.decay;
         
         if (p.life <= 0) {
             particles.splice(i, 1);
@@ -233,20 +179,24 @@ Events.on(render, 'afterRender', () => {
         }
 
         ctx.globalAlpha = p.life;
-        ctx.fillStyle = '#06B6D4'; // Cyan
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = '#06B6D4';
+        ctx.fillStyle = p.color;
+        
+        // Effet de lueur uniquement pour les étincelles rapides
+        if (p.color === '#06B6D4') {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = p.color;
+        } else {
+            ctx.shadowBlur = 0; // Les débris ne brillent pas
+        }
+
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, 2 * Math.PI);
+        // Dessin étiré selon la vélocité pour simuler le motion blur
+        const stretch = Math.max(1, Math.sqrt(p.vx*p.vx + p.vy*p.vy) * 0.5);
+        ctx.ellipse(p.x, p.y, p.size * stretch, p.size, Math.atan2(p.vy, p.vx), 0, 2 * Math.PI);
         ctx.fill();
     }
+    
+    // Reset du contexte canvas
     ctx.globalAlpha = 1.0;
     ctx.shadowBlur = 0;
-});
-
-// Resize dynamique
-window.addEventListener('resize', () => {
-    render.canvas.width = window.innerWidth;
-    render.canvas.height = window.innerHeight;
-    Bounds.update(render.bounds, [{x:0, y:0}, {x:window.innerWidth, y:window.innerHeight}]);
 });
