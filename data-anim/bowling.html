@@ -3,176 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bowling Spatial</title>
+    <title>Bowling Spatial Pro</title>
     <style>
-        /* --- UTILISATION DE TA PALETTE DE COULEURS --- */
         :root {
-            --bg-color: #1E293B;      /* Bleu nuit / Espace profond */
-            --cyan-accent: #06B6D4;   /* Contour et textes secondaires */
-            --orange-power: #F59E0B;  /* Données importantes (Niveau, Masse) */
-            --purple-neon: #8B5CF6;   /* Effets et quilles (Z) */
+            --bg-color: #1E293B;
+            --cyan-accent: #06B6D4;
+            --orange-power: #F59E0B;
+            --purple-neon: #8B5CF6;
         }
 
         body {
             margin: 0;
             overflow: hidden;
             background-color: var(--bg-color);
+            /* Petit effet d'étoiles en arrière-plan */
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
+            background-size: 550px 550px, 350px 350px;
+            background-position: 0 0, 40px 60px;
             color: white;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
             height: 100vh;
         }
 
-        /* Panneau de statistiques */
+        /* Interface (HUD) */
         #hud {
             position: absolute;
             top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             gap: 20px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px 25px;
-            border-radius: 12px;
-            border: 2px solid var(--cyan-accent);
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-            text-transform: uppercase;
-            font-size: 1rem;
-            letter-spacing: 1px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--cyan-accent);
+            z-index: 100;
             opacity: 0;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.5s;
         }
+        .stat-value { color: var(--orange-power); font-weight: bold; }
 
-        .stat-label { color: var(--cyan-accent); }
-        .stat-value { color: var(--orange-power); font-weight: bold; font-size: 1.2rem; }
-        .stat-z { color: var(--purple-neon); font-weight: bold; font-size: 1.2rem; }
-
-        /* Arène et Astre */
-        #arena {
+        /* Zone de jeu */
+        #stage {
             position: relative;
             width: 100%;
-            height: 300px;
+            height: 100vh;
             display: flex;
             align-items: center;
         }
 
+        /* L'Astre */
         #astre {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             position: absolute;
-            left: -150px; /* Caché hors de l'écran au départ */
+            left: -150px;
+            z-index: 10;
             border-radius: 50%;
-            box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
-            /* L'animation de roulement/vol */
-            transition: transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            filter: drop-shadow(0 0 15px var(--orange-power));
         }
 
-        .lancer {
-            /* Fait traverser l'écran à l'astre tout en le faisant tourner */
-            transform: translateX(calc(100vw + 150px)) rotate(1080deg);
+        /* Les Quilles (représentées par le niveau Z) */
+        #pins-container {
+            position: absolute;
+            right: 15%;
+            height: 200px;
+            display: flex;
+            flex-wrap: wrap;
+            width: 120px;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Message d'attente */
+        .pin {
+            width: 20px;
+            height: 60px;
+            background: var(--purple-neon);
+            border-radius: 5px;
+            box-shadow: 0 0 15px var(--purple-neon);
+            transition: transform 0.5s, opacity 0.5s;
+        }
+
+        /* Animation du lancer */
+        .lancer-anim {
+            animation: voyage 2s forwards cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes voyage {
+            0% { transform: translateX(0) rotate(0deg); }
+            100% { transform: translateX(calc(100vw + 200px)) rotate(1000deg); }
+        }
+
+        /* Quand une quille est touchée */
+        .pin-hit {
+            transform: translateY(100px) rotate(90deg) scale(0);
+            opacity: 0;
+        }
+
         #waiting {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 50%;
             color: var(--cyan-accent);
-            font-size: 1.5rem;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
 
-    <div id="waiting">En attente de transmission orbitale...</div>
+    <div id="waiting">Scanner de trajectoire actif...</div>
 
     <div id="hud">
-        <div><span class="stat-label">Masse:</span> <span id="val-mass" class="stat-value"></span></div>
-        <div><span class="stat-label">Astre:</span> <span id="val-type" class="stat-value"></span></div>
-        <div><span class="stat-label">Puissance:</span> <span id="val-lvl" class="stat-value"></span></div>
-        <div><span class="stat-label">Quilles:</span> <span id="val-z" class="stat-z"></span></div>
+        <div id="info-text"></div>
     </div>
 
-    <div id="arena">
-        <img id="astre" src="" alt="Astre au bowling">
+    <div id="stage">
+        <img id="astre" src="" alt="">
+        <div id="pins-container"></div>
     </div>
 
     <script>
-        // Écouteur d'événements pour le postMessage du site parent (Site B)
         window.addEventListener('message', (event) => {
             const data = event.data;
+            const regex = /(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i;
+            const match = typeof data === 'string' ? data.match(regex) : null;
 
-            // 1. Amélioration du pattern (Traitement de ta chaîne de caractères)
-            if (typeof data === 'string') {
-                // Cette expression régulière cherche : Chiffre + kg | Type: Mot | Chiffre + lvl | Z + Chiffre
-                const regex = /(\d+(?:\.\d+)?)\s*kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)\s*lvl\s*\|\s*Z(\d+)/i;
-                const match = data.match(regex);
-
-                if (match) {
-                    const params = {
-                        mass: match[1],
-                        type: match[2].trim(),
-                        lvl: match[3],
-                        zLevel: match[4]
-                    };
-                    declencherAnimation(params);
-                } else {
-                    console.error("Format de message non reconnu :", data);
-                }
-            } 
-            // 2. Format JSON (Best Practice)
-            else if (typeof data === 'object' && data.action === 'lancer') {
-                declencherAnimation(data.payload);
+            if (match) {
+                const config = {
+                    mass: match[1],
+                    type: match[2].trim(),
+                    lvl: match[3],
+                    z: match[4]
+                };
+                runStrike(config);
             }
         });
 
-        function declencherAnimation(params) {
-            // Cacher le texte d'attente, afficher le HUD
-            document.getElementById('waiting').style.display = 'none';
-            document.getElementById('hud').style.opacity = '1';
+        function runStrike(cfg) {
+            document.getElementById('waiting').style.opacity = '0';
+            const hud = document.getElementById('hud');
+            hud.style.opacity = '1';
+            hud.innerHTML = `
+                <span>MASSE: <span class="stat-value">${cfg.mass}kg</span></span>
+                <span>TYPE: <span class="stat-value">${cfg.type}</span></span>
+                <span>POWER: <span class="stat-value">Lvl ${cfg.lvl}</span></span>
+                <span>QUILLES: <span class="stat-value">Z${cfg.z}</span></span>
+            `;
 
-            // Mettre à jour les textes
-            document.getElementById('val-mass').innerText = params.mass + 'kg';
-            document.getElementById('val-type').innerText = params.type;
-            document.getElementById('val-lvl').innerText = 'Lvl ' + params.lvl;
-            document.getElementById('val-z').innerText = 'Lvl ' + params.zLevel;
+            // Configurer l'image
+            const astre = document.getElementById('astre');
+            const imgName = cfg.type.toLowerCase().replace(/\s+/g, '-');
+            astre.src = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${imgName}.png`;
+            astre.onerror = () => astre.src = 'https://user-anonymous-dev.github.io/bowling-spatiale_/picture/template-astres.png';
 
-            // Gestion de l'image de l'astre
-            const astreImg = document.getElementById('astre');
-            
-            // On formate le nom (ex: "Trou Noir" devient "trou-noir" ou "Terre" devient "terre")
-            const imageFileName = params.type.toLowerCase().replace(/\s+/g, '-');
-            astreImg.src = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${imageFileName}.png`;
-            
-            // Fallback: Si l'image n'existe pas, on met le template
-            astreImg.onerror = function() {
-                this.onerror = null; // Empêche une boucle infinie si le template est aussi cassé
-                this.src = 'https://user-anonymous-dev.github.io/bowling-spatiale_/picture/template-astres.png';
-            };
+            // Générer les quilles basées sur Z
+            const container = document.getElementById('pins-container');
+            container.innerHTML = '';
+            // On crée autant de quilles que le niveau Z (limité à 15 pour le visuel)
+            const count = Math.min(cfg.z, 15);
+            for(let i=0; i<count; i++) {
+                const pin = document.createElement('div');
+                pin.className = 'pin';
+                container.appendChild(pin);
+            }
 
-            // Lancer l'animation
-            astreImg.classList.remove('lancer');
-            
-            // Un micro-délai est nécessaire pour que le navigateur réinitialise l'animation
+            // Reset & Lancer
+            astre.classList.remove('lancer-anim');
+            void astre.offsetWidth; // Force le reflow
+            astre.classList.add('lancer-anim');
+
+            // Simuler l'impact après 1.4s (quand la boule arrive vers la droite)
             setTimeout(() => {
-                // Petit bonus : tu peux faire varier la durée de la transition CSS 
-                // en fonction de la masse ou de la puissance via du JS ici !
-                astreImg.classList.add('lancer');
-            }, 50);
+                const pins = document.querySelectorAll('.pin');
+                pins.forEach((p, index) => {
+                    setTimeout(() => {
+                        p.classList.add('pin-hit');
+                    }, index * 50); // Petit décalage pour l'effet de choc
+                });
+            }, 1400);
         }
-
-        // --- OUTIL DE TEST ---
-        // Décommente la ligne ci-dessous pour tester l'animation sans avoir besoin du Site B !
-        /*
-        setTimeout(() => {
-            window.postMessage("150kg | Type : Mars | 42lvl | Z5", "*");
-        }, 1000);
-        */
     </script>
 </body>
 </html>
