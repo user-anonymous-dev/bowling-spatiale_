@@ -2,191 +2,170 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bowling Spatial Pro</title>
+    <title>Bowling Spatial Ultra</title>
     <style>
         :root {
-            --bg-color: #1E293B;
-            --cyan-accent: #06B6D4;
-            --orange-power: #F59E0B;
-            --purple-neon: #8B5CF6;
+            --bg: #1E293B; --cyan: #06B6D4; --orange: #F59E0B; --purple: #8B5CF6;
         }
 
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            /* Petit effet d'étoiles en arrière-plan */
-            background-image: 
-                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
-                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px);
-            background-size: 550px 550px, 350px 350px;
-            background-position: 0 0, 40px 60px;
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            height: 100vh;
+        body, html { 
+            margin: 0; padding: 0; overflow: hidden; 
+            background: var(--bg); font-family: 'orbitron', 'Segoe UI', sans-serif;
+            height: 100%; color: white;
         }
 
-        /* Interface (HUD) */
+        /* Fond étoilé animé */
+        .stars {
+            position: absolute; top: 0; left: 0; width: 200%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            opacity: 0.3; animation: slideStars 100s linear infinite;
+        }
+
+        @keyframes slideStars { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* HUD Style Cockpit */
         #hud {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 20px;
-            background: rgba(15, 23, 42, 0.8);
-            padding: 10px 20px;
-            border-radius: 50px;
-            border: 1px solid var(--cyan-accent);
-            z-index: 100;
-            opacity: 0;
-            transition: opacity 0.5s;
+            position: absolute; top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between;
+            padding: 15px 25px; border-left: 5px solid var(--cyan);
+            background: rgba(15, 23, 59, 0.8); backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+            border-radius: 0 15px 15px 0; z-index: 100; transform: translateY(-150%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .stat-value { color: var(--orange-power); font-weight: bold; }
 
-        /* Zone de jeu */
-        #stage {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            align-items: center;
+        .stat { display: flex; flex-direction: column; }
+        .label { font-size: 10px; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px; }
+        .value { font-size: 20px; font-weight: 800; color: var(--orange); }
+        .value-z { color: var(--purple); }
+
+        /* La Piste (Perspective 3D) */
+        .piste {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 80vh;
+            background: linear-gradient(to top, rgba(6, 182, 212, 0.2), transparent);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            border-bottom: 4px solid var(--cyan);
         }
 
         /* L'Astre */
         #astre {
-            width: 100px;
-            height: 100px;
-            position: absolute;
-            left: -150px;
-            z-index: 10;
-            border-radius: 50%;
-            filter: drop-shadow(0 0 15px var(--orange-power));
+            position: absolute; bottom: 50px; left: 50%;
+            width: 80px; height: 80px; margin-left: -40px;
+            z-index: 50; filter: drop-shadow(0 0 15px var(--orange));
+            transform: scale(0); transition: transform 0.3s ease-out;
         }
 
-        /* Les Quilles (représentées par le niveau Z) */
-        #pins-container {
-            position: absolute;
-            right: 15%;
-            height: 200px;
-            display: flex;
-            flex-wrap: wrap;
-            width: 120px;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
+        /* Les Quilles (Z) */
+        #quilles-container {
+            position: absolute; top: 20%; left: 50%;
+            transform: translateX(-50%); display: flex; flex-wrap: wrap-reverse;
+            justify-content: center; width: 150px; gap: 8px;
         }
 
-        .pin {
-            width: 20px;
-            height: 60px;
-            background: var(--purple-neon);
-            border-radius: 5px;
-            box-shadow: 0 0 15px var(--purple-neon);
-            transition: transform 0.5s, opacity 0.5s;
+        .quille {
+            width: 15px; height: 40px; background: var(--purple);
+            border-radius: 3px; box-shadow: 0 0 10px var(--purple);
+            transition: all 0.4s ease-out;
         }
 
-        /* Animation du lancer */
-        .lancer-anim {
-            animation: voyage 2s forwards cubic-bezier(0.4, 0, 0.2, 1);
+        /* ANIMATIONS */
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
-        @keyframes voyage {
-            0% { transform: translateX(0) rotate(0deg); }
-            100% { transform: translateX(calc(100vw + 200px)) rotate(1000deg); }
+        .launch-move {
+            transition: all 1s cubic-bezier(0.55, 0.055, 0.675, 0.19) !important;
+            transform: translate(-50%, -400px) scale(0.2) rotate(720deg) !important;
+            opacity: 0.5;
         }
 
-        /* Quand une quille est touchée */
-        .pin-hit {
-            transform: translateY(100px) rotate(90deg) scale(0);
-            opacity: 0;
-        }
-
-        #waiting {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            top: 50%;
-            color: var(--cyan-accent);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
+        .explode { transform: scale(0) rotate(180deg); opacity: 0; filter: blur(10px); }
     </style>
 </head>
 <body>
 
-    <div id="waiting">Scanner de trajectoire actif...</div>
+<div class="stars"></div>
+<div id="hud">
+    <div class="stat"><span class="label">Masse</span><span id="v-kg" class="value">0</span></div>
+    <div class="stat"><span class="label">Type</span><span id="v-type" class="value">None</span></div>
+    <div class="stat"><span class="label">Power</span><span id="v-lvl" class="value">0</span></div>
+    <div class="stat"><span class="label">Target Z</span><span id="v-z" class="value value-z">0</span></div>
+</div>
 
-    <div id="hud">
-        <div id="info-text"></div>
-    </div>
+<div class="piste"></div>
 
-    <div id="stage">
-        <img id="astre" src="" alt="">
-        <div id="pins-container"></div>
-    </div>
+<div id="quilles-container"></div>
 
-    <script>
-        window.addEventListener('message', (event) => {
-            const data = event.data;
-            const regex = /(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i;
-            const match = typeof data === 'string' ? data.match(regex) : null;
+<img id="astre" src="" alt="Astre">
 
-            if (match) {
-                const config = {
-                    mass: match[1],
-                    type: match[2].trim(),
-                    lvl: match[3],
-                    z: match[4]
-                };
-                runStrike(config);
-            }
-        });
+<script>
+    const astre = document.getElementById('astre');
+    const hud = document.getElementById('hud');
+    const container = document.getElementById('quilles-container');
 
-        function runStrike(cfg) {
-            document.getElementById('waiting').style.opacity = '0';
-            const hud = document.getElementById('hud');
-            hud.style.opacity = '1';
-            hud.innerHTML = `
-                <span>MASSE: <span class="stat-value">${cfg.mass}kg</span></span>
-                <span>TYPE: <span class="stat-value">${cfg.type}</span></span>
-                <span>POWER: <span class="stat-value">Lvl ${cfg.lvl}</span></span>
-                <span>QUILLES: <span class="stat-value">Z${cfg.z}</span></span>
-            `;
+    window.addEventListener('message', (e) => {
+        const regex = /(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i;
+        const m = typeof e.data === 'string' ? e.data.match(regex) : null;
+        if (m) launch({ kg: m[1], type: m[2].trim(), lvl: m[3], z: m[4] });
+    });
 
-            // Configurer l'image
-            const astre = document.getElementById('astre');
-            const imgName = cfg.type.toLowerCase().replace(/\s+/g, '-');
-            astre.src = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${imgName}.png`;
-            astre.onerror = () => astre.src = 'https://user-anonymous-dev.github.io/bowling-spatiale_/picture/template-astres.png';
+    function launch(data) {
+        // Reset
+        astre.style.transition = 'none';
+        astre.style.transform = 'scale(0)';
+        astre.className = '';
+        container.innerHTML = '';
+        
+        // Setup HUD
+        document.getElementById('v-kg').innerText = data.kg + 'kg';
+        document.getElementById('v-type').innerText = data.type;
+        document.getElementById('v-lvl').innerText = 'Lvl ' + data.lvl;
+        document.getElementById('v-z').innerText = 'Z' + data.z;
+        hud.style.transform = 'translateY(0)';
 
-            // Générer les quilles basées sur Z
-            const container = document.getElementById('pins-container');
-            container.innerHTML = '';
-            // On crée autant de quilles que le niveau Z (limité à 15 pour le visuel)
-            const count = Math.min(cfg.z, 15);
-            for(let i=0; i<count; i++) {
-                const pin = document.createElement('div');
-                pin.className = 'pin';
-                container.appendChild(pin);
-            }
-
-            // Reset & Lancer
-            astre.classList.remove('lancer-anim');
-            void astre.offsetWidth; // Force le reflow
-            astre.classList.add('lancer-anim');
-
-            // Simuler l'impact après 1.4s (quand la boule arrive vers la droite)
-            setTimeout(() => {
-                const pins = document.querySelectorAll('.pin');
-                pins.forEach((p, index) => {
-                    setTimeout(() => {
-                        p.classList.add('pin-hit');
-                    }, index * 50); // Petit décalage pour l'effet de choc
-                });
-            }, 1400);
+        // Setup Quilles (Z)
+        for(let i=0; i < Math.min(data.z, 20); i++) {
+            const q = document.createElement('div');
+            q.className = 'quille';
+            container.appendChild(q);
         }
-    </script>
+
+        // Setup Image
+        const name = data.type.toLowerCase().replace(/\s+/g, '-');
+        astre.src = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${name}.png`;
+        astre.onerror = () => astre.src = 'https://user-anonymous-dev.github.io/bowling-spatiale_/picture/template-astres.png';
+
+        // Séquence d'animation
+        setTimeout(() => {
+            // Apparition (Taille basée sur KG - min 0.5, max 1.5)
+            const size = Math.max(0.5, Math.min(data.kg / 100, 1.8));
+            astre.style.transform = `scale(${size})`;
+            
+            // Lancement (Vitesse basée sur LVL)
+            setTimeout(() => {
+                const duration = Math.max(0.4, 1.5 - (data.lvl / 50));
+                astre.style.transition = `all ${duration}s cubic-bezier(0.5, 0, 0.7, 0.2)`;
+                astre.classList.add('launch-move');
+
+                // Impact
+                setTimeout(() => {
+                    document.body.classList.add('shake');
+                    const quilles = document.querySelectorAll('.quille');
+                    quilles.forEach(q => q.classList.add('explode'));
+                    
+                    setTimeout(() => {
+                        document.body.classList.remove('shake');
+                        hud.style.transform = 'translateY(-150%)';
+                    }, 1000);
+                }, duration * 1000);
+            }, 600);
+        }, 100);
+    }
+</script>
 </body>
 </html>
