@@ -3,227 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L'Équipage | Terminal de Mission</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@500;800&display=swap" rel="stylesheet">
+    <title>Terminal Équipage | Mission 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Space+Grotesk:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00f2ff;
-            --secondary: #7000ff;
-            --bg-dark: #030712;
-            --card-bg: rgba(15, 23, 42, 0.7);
-            --border-glow: rgba(0, 242, 255, 0.3);
+            --space-blue: #1E293B;   /* Atmosphère */
+            --star-cyan: #06B6D4;    /* Interfaces HUD */
+            --nova-orange: #F59E0B;  /* Moteurs / Alertes */
+            --pulsar-purple: #8B5CF6; /* Énergie exotique */
+            --dark-void: #020617;
         }
 
         * { box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: #e2e8f0;
+            background-color: var(--dark-void);
+            color: #f1f5f9;
+            font-family: 'Space Grotesk', sans-serif;
             margin: 0;
-            min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
+            min-height: 100vh;
             overflow-x: hidden;
+            /* Texture de fond "grille radar" */
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(0, 242, 255, 0.1) 0%, transparent 40%);
+                linear-gradient(rgba(30, 41, 59, 0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30, 41, 59, 0.2) 1px, transparent 1px);
+            background-size: 50px 50px;
         }
 
-        /* Animation d'étoiles subtile */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 200%; height: 200%;
-            background: url('https://www.transparenttextures.com/patterns/stardust.png');
-            opacity: 0.3;
-            animation: drift 60s linear infinite;
-            z-index: -1;
-        }
-
-        @keyframes drift {
-            from { transform: translate(0,0); }
-            to { transform: translate(-50%, -50%); }
+        .main-frame {
+            width: 95%;
+            max-width: 1100px;
+            padding: 40px;
+            position: relative;
         }
 
         header {
-            text-align: center;
-            padding: 80px 20px;
+            text-align: left;
+            margin-bottom: 60px;
+            border-left: 4px solid var(--star-cyan);
+            padding-left: 20px;
         }
 
         h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.5rem, 8vw, 4.5rem);
-            font-weight: 800;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
             margin: 0;
-            background: linear-gradient(to bottom, #fff 30%, var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 8px;
-            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+            color: var(--star-cyan);
+            text-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
         }
 
-        .status {
+        .mission-status {
+            color: var(--nova-orange);
             font-family: 'Orbitron', sans-serif;
             font-size: 0.8rem;
-            color: var(--primary);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-top: 10px;
-            opacity: 0.8;
-        }
-
-        .container {
-            max-width: 1000px;
-            width: 90%;
-            margin-bottom: 100px;
-        }
-
-        /* Grille 2x2 optimisée */
-        .crew-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
-        }
-
-        .member-card {
-            position: relative;
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px 30px;
-            border-radius: 4px; /* Style plus "industriel" que arrondi */
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        /* Coins décoratifs pour le style "HUD" */
-        .member-card::after {
-            content: "";
-            position: absolute;
-            bottom: 10px; right: 10px;
-            width: 20px; height: 20px;
-            border-right: 2px solid var(--primary);
-            border-bottom: 2px solid var(--primary);
-            opacity: 0.3;
-            transition: 0.3s;
-        }
-
-        .member-card:hover {
-            transform: scale(1.02);
-            border-color: var(--primary);
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.15);
-        }
-
-        .member-card:hover::after { opacity: 1; }
-
-        .role {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
-            color: var(--secondary);
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .role::before {
-            content: "";
-            width: 15px; height: 1px;
-            background: var(--secondary);
-        }
-
-        .username {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.4rem;
-            color: #ffffff;
-            margin: 0 0 5px 0;
-        }
-
-        .discord-id {
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: #64748b;
-            margin-bottom: 20px;
-        }
-
-        .bio {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #94a3b8;
-            border-left: 2px solid rgba(112, 0, 255, 0.3);
-            padding-left: 15px;
-        }
-
-        footer {
-            padding: 40px;
-            text-align: center;
-            width: 100%;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.7rem;
-            color: #475569;
             letter-spacing: 2px;
         }
 
-        /* Responsive : repasser en 1 colonne sur mobile */
-        @media (max-width: 768px) {
-            .crew-grid {
-                grid-template-columns: 1fr;
-            }
-            h1 { font-size: 2.5rem; }
+        /* Grille 2x2 ultra-propre */
+        .crew-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            padding: 30px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Effet de lueur au survol */
+        .card:hover {
+            border-color: var(--star-cyan);
+            background: rgba(30, 41, 59, 0.6);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(2, 6, 23, 0.8);
+        }
+
+        /* Coins HUD décoratifs */
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 10px; height: 10px;
+            border-top: 2px solid var(--star-cyan);
+            border-left: 2px solid var(--star-cyan);
+        }
+
+        .tag {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        /* Variantes de couleurs pour les rôles */
+        .tag-dev { background: rgba(139, 92, 246, 0.2); color: var(--pulsar-purple); border: 1px solid var(--pulsar-purple); }
+        .tag-ops { background: rgba(245, 158, 11, 0.2); color: var(--nova-orange); border: 1px solid var(--nova-orange); }
+
+        .name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+            color: #fff;
+        }
+
+        .id-label {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--star-cyan);
+            opacity: 0.6;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .desc {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        footer {
+            margin-top: 50px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            text-align: center;
+            color: var(--space-blue);
+            letter-spacing: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 850px) {
+            .crew-grid { grid-template-columns: 1fr; }
+            .main-frame { padding: 20px; }
+        }
+
+        /* Animation d'entrée */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(1000%); }
+        }
+
+        .scan {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(6, 182, 212, 0.1);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="status">Système Opérationnel</div>
-        <h1>ÉQUIPAGE</h1>
-    </header>
+    <div class="scan"></div>
 
-    <div class="container">
+    <main class="main-frame">
+        <header>
+            <div class="mission-status">● SYSTEM_ONLINE // JAM_2026</div>
+            <h1>L'Équipage</h1>
+        </header>
+
         <div class="crew-grid">
             
-            <article class="member-card">
-                <div class="role">Directeur de mission</div>
-                <h2 class="username">@gianni.core</h2>
-                <div class="discord-id">ID // 1188155402794307685</div>
-                <p class="bio">Pilote principal du projet. A orchestré le développement, l'identité visuelle et l'infrastructure légale de la mission.</p>
+            <article class="card">
+                <span class="tag tag-dev">Direction & Core</span>
+                <h2 class="name">@gianni.core</h2>
+                <span class="id-label">REF_ID: 1188155402794307685</span>
+                <p class="desc">Architecte système. Gestion des protocoles légaux, de l'identité visuelle et du développement du noyau principal.</p>
             </article>
 
-            <article class="member-card">
-                <div class="role">Ingénieur Lancement</div>
-                <h2 class="username">@blakpanter0358</h2>
-                <div class="discord-id">ID // 1337310179254997054</div>
-                <p class="bio">Responsable de l'organisation et du contrôle qualité. Assure la stabilité du déploiement et les finitions critiques.</p>
+            <article class="card">
+                <span class="tag tag-ops">Lancement & Finitions</span>
+                <h2 class="name">@blakpanter0358</h2>
+                <span class="id-label">REF_ID: 1337310179254997054</span>
+                <p class="desc">Officier tactique. Coordination du lancement et optimisation des derniers modules avant déploiement.</p>
             </article>
 
-            <article class="member-card">
-                <div class="role">Spécialiste Design</div>
-                <h2 class="username">@aliwert23</h2>
-                <div class="discord-id">ID // 1358921365893284044</div>
-                <p class="bio">Architecte visuel. Définition des interfaces et création de l'esthétique globale pour une immersion totale.</p>
+            <article class="card">
+                <span class="tag tag-dev">Design Visuel</span>
+                <h2 class="name">@aliwert23</h2>
+                <span class="id-label">REF_ID: 1358921365893284044</span>
+                <p class="desc">Ingénieur interface. Création des environnements graphiques et de l'expérience utilisateur immersive.</p>
             </article>
 
-            <article class="member-card">
-                <div class="role">Officier Scénario</div>
-                <h2 class="username">@espace6140</h2>
-                <div class="discord-id">ID // 1124712289895985276</div>
-                <p class="bio">Générateur narratif et appui technique. A tissé l'univers de la mission tout en participant au développement.</p>
+            <article class="card">
+                <span class="tag tag-ops">Scénario & Script</span>
+                <h2 class="name">@espace6140</h2>
+                <span class="id-label">REF_ID: 1124712289895985276</span>
+                <p class="desc">Officier de liaison narrative. Développement de l'univers et support technique sur les modules de jeu.</p>
             </article>
 
         </div>
-    </div>
 
-    <footer>
-        MISSION : GAME JAM 2026 — [ TRANSMISSION TERMINÉE ]
-    </footer>
+        <footer>
+            TERMINAL_V.2.6 // TRANSMISSION CRYPTÉE
+        </footer>
+    </main>
 
 </body>
 </html>
