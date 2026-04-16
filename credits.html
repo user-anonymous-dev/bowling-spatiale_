@@ -3,236 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>L'Équipage | Crédits</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>L'Équipage | Terminal de Mission</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@500;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #22d3ee;    /* Cyan Étoile */
-            --secondary: #a855f7;  /* Violet Nébuleuse */
-            --accent: #f472b6;     /* Rose Pulsar */
-            --dark: #020617;       /* Noir profond */
-            --card-bg: rgba(30, 41, 59, 0.5);
-            --border: rgba(255, 255, 255, 0.1);
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --bg-dark: #030712;
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --border-glow: rgba(0, 242, 255, 0.3);
         }
 
         * { box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: #f8fafc;
-            background-color: var(--dark);
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
             margin: 0;
-            overflow-x: hidden;
-            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-        }
-
-        /* --- Animation d'étoiles en fond --- */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: transparent url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/123163/stars.png') repeat;
-            z-index: -1;
-            opacity: 0.5;
-            animation: move-stars 100s linear infinite;
-        }
-
-        @keyframes move-stars {
-            from { background-position: 0 0; }
-            to { background-position: 1000px 500px; }
-        }
-
-        header {
-            padding: 6rem 2rem;
-            text-align: center;
-            background: radial-gradient(circle at top, rgba(139, 92, 246, 0.2), transparent);
-        }
-
-        h1 { 
-            font-family: 'Orbitron', sans-serif;
-            margin: 0; 
-            font-size: clamp(2rem, 8vw, 4rem); 
-            text-transform: uppercase; 
-            letter-spacing: 4px;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.3));
-        }
-
-        .subtitle { 
-            font-size: 1.1rem; 
-            color: #94a3b8;
-            margin-top: 1rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto 4rem auto;
-            padding: 0 1.5rem;
-        }
-
-        h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
-            font-size: 1.5rem;
-            text-align: center;
-            margin-bottom: 3rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        h2::before, h2::after {
-            content: "";
-            height: 1px;
-            width: 50px;
-            background: var(--primary);
-            opacity: 0.5;
-        }
-
-        /* --- Grid & Cards --- */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 2.5rem 1.5rem;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(0, 242, 255, 0.1) 0%, transparent 40%);
         }
 
-        .card::before {
+        /* Animation d'étoiles subtile */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 200%; height: 200%;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            opacity: 0.3;
+            animation: drift 60s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes drift {
+            from { transform: translate(0,0); }
+            to { transform: translate(-50%, -50%); }
+        }
+
+        header {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(to bottom, #fff 30%, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 8px;
+            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+        }
+
+        .status {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--primary);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 90%;
+            margin-bottom: 100px;
+        }
+
+        /* Grille 2x2 optimisée */
+        .crew-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+
+        .member-card {
+            position: relative;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 30px;
+            border-radius: 4px; /* Style plus "industriel" que arrondi */
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Coins décoratifs pour le style "HUD" */
+        .member-card::after {
             content: "";
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            opacity: 0;
-            transition: opacity 0.3s;
+            bottom: 10px; right: 10px;
+            width: 20px; height: 20px;
+            border-right: 2px solid var(--primary);
+            border-bottom: 2px solid var(--primary);
+            opacity: 0.3;
+            transition: 0.3s;
         }
 
-        .card:hover {
-            transform: translateY(-10px);
-            border-color: rgba(34, 211, 238, 0.4);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        .member-card:hover {
+            transform: scale(1.02);
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.15);
         }
 
-        .card:hover::before { opacity: 1; }
+        .member-card:hover::after { opacity: 1; }
 
-        .role-tag {
-            background: rgba(168, 85, 247, 0.15);
-            color: var(--secondary);
-            padding: 0.4rem 1rem;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(168, 85, 247, 0.3);
-        }
-
-        .name {
+        .role {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            margin: 0;
-            color: #fff;
-            text-align: center;
+            font-size: 0.7rem;
+            color: var(--secondary);
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .role::before {
+            content: "";
+            width: 15px; height: 1px;
+            background: var(--secondary);
+        }
+
+        .username {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin: 0 0 5px 0;
         }
 
         .discord-id {
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-            color: var(--primary);
-            opacity: 0.7;
-            margin: 0.5rem 0 1.5rem 0;
-            background: rgba(0,0,0,0.2);
-            padding: 2px 8px;
-            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 20px;
         }
 
-        .description {
-            color: #94a3b8;
+        .bio {
             font-size: 0.95rem;
-            text-align: center;
-            margin: 0;
+            line-height: 1.6;
+            color: #94a3b8;
+            border-left: 2px solid rgba(112, 0, 255, 0.3);
+            padding-left: 15px;
         }
 
         footer {
+            padding: 40px;
             text-align: center;
-            padding: 4rem 2rem;
+            width: 100%;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
             color: #475569;
-            font-size: 0.9rem;
-            border-top: 1px solid var(--border);
+            letter-spacing: 2px;
         }
 
-        .copyright { color: var(--primary); font-weight: bold; }
-
+        /* Responsive : repasser en 1 colonne sur mobile */
+        @media (max-width: 768px) {
+            .crew-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 { font-size: 2.5rem; }
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>L'ÉQUIPAGE</h1>
-        <p class="subtitle">Mission Jam 2026</p>
+        <div class="status">Système Opérationnel</div>
+        <h1>ÉQUIPAGE</h1>
     </header>
 
-    <main class="container">
-        
-        <section id="equipe">
-            <h2>Membres de la mission</h2>
+    <div class="container">
+        <div class="crew-grid">
             
-            <div class="grid">
-                <article class="card">
-                    <span class="role-tag">Direction & Dev</span>
-                    <h3 class="name">@gianni.core</h3>
-                    <span class="discord-id">ID: 1188155402794307685</span>
-                    <p class="description">Architecte du projet : gère l'aspect légal, la documentation, l'identité visuelle et le développement global.</p>
-                </article>
+            <article class="member-card">
+                <div class="role">Directeur de mission</div>
+                <h2 class="username">@gianni.core</h2>
+                <div class="discord-id">ID // 1188155402794307685</div>
+                <p class="bio">Pilote principal du projet. A orchestré le développement, l'identité visuelle et l'infrastructure légale de la mission.</p>
+            </article>
 
-                <article class="card">
-                    <span class="role-tag">Orga & Finitions</span>
-                    <h3 class="name">@blakpanter0358</h3>
-                    <span class="discord-id">ID: 1337310179254997054</span>
-                    <p class="description">Stratège du lancement : responsable de la coordination, des conseils critiques et du peaufinage final.</p>
-                </article>
+            <article class="member-card">
+                <div class="role">Ingénieur Lancement</div>
+                <h2 class="username">@blakpanter0358</h2>
+                <div class="discord-id">ID // 1337310179254997054</div>
+                <p class="bio">Responsable de l'organisation et du contrôle qualité. Assure la stabilité du déploiement et les finitions critiques.</p>
+            </article>
 
-                <article class="card">
-                    <span class="role-tag">Design Visuel</span>
-                    <h3 class="name">@aliwert23</h3>
-                    <span class="discord-id">ID: 1358921365893284044</span>
-                    <p class="description">Artiste de bord : a conçu l'univers graphique, les interfaces et l'esthétique visuelle du projet.</p>
-                </article>
+            <article class="member-card">
+                <div class="role">Spécialiste Design</div>
+                <h2 class="username">@aliwert23</h2>
+                <div class="discord-id">ID // 1358921365893284044</div>
+                <p class="bio">Architecte visuel. Définition des interfaces et création de l'esthétique globale pour une immersion totale.</p>
+            </article>
 
-                <article class="card">
-                    <span class="role-tag">Scénario & Dev</span>
-                    <h3 class="name">@espace6140</h3>
-                    <span class="discord-id">ID: 1124712289895985276</span>
-                    <p class="description">Maitre du récit : a imaginé l'univers et l'histoire tout en prêtant main forte sur le code.</p>
-                </article>
-            </div>
-        </section>
+            <article class="member-card">
+                <div class="role">Officier Scénario</div>
+                <h2 class="username">@espace6140</h2>
+                <div class="discord-id">ID // 1124712289895985276</div>
+                <p class="bio">Générateur narratif et appui technique. A tissé l'univers de la mission tout en participant au développement.</p>
+            </article>
 
-    </main>
+        </div>
+    </div>
 
     <footer>
-        <span class="copyright">&copy; Game Jam 2026</span><br>
-        Systèmes opérationnels — Fin de transmission
+        MISSION : GAME JAM 2026 — [ TRANSMISSION TERMINÉE ]
     </footer>
 
 </body>
