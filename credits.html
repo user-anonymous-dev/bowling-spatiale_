@@ -3,184 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crédits</title>
+    <title>L'Équipage | Crédits</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Palette Espace */
-            --primary: #06b6d4;    /* Cyan Étoile */
-            --secondary: #8b5cf6;  /* Violet Nébuleuse */
-            --dark: #05070a;       /* Noir Spatial */
-            --light: #f8fafc;      /* Starlight */
-            --gray: #1e293b;       /* Bleu profond */
+            --primary: #22d3ee;    /* Cyan Étoile */
+            --secondary: #a855f7;  /* Violet Nébuleuse */
+            --accent: #f472b6;     /* Rose Pulsar */
+            --dark: #020617;       /* Noir profond */
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --border: rgba(255, 255, 255, 0.1);
         }
 
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
             line-height: 1.6;
-            color: var(--light);
+            color: #f8fafc;
             background-color: var(--dark);
             margin: 0;
-            padding: 0;
-            /* Ajout d'une subtile image de fond étoilée si tu le souhaites un jour */
-            /* background-image: url('stars.png'); */
+            overflow-x: hidden;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+        }
+
+        /* --- Animation d'étoiles en fond --- */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/123163/stars.png') repeat;
+            z-index: -1;
+            opacity: 0.5;
+            animation: move-stars 100s linear infinite;
+        }
+
+        @keyframes move-stars {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 500px; }
         }
 
         header {
-            background: linear-gradient(135deg, #0f172a, var(--secondary), var(--dark));
-            padding: 4rem 2rem;
+            padding: 6rem 2rem;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border-bottom: 1px solid var(--primary);
+            background: radial-gradient(circle at top, rgba(139, 92, 246, 0.2), transparent);
         }
 
-        h1 { margin: 0; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; }
-        p.subtitle { font-size: 1.2rem; opacity: 0.9; margin-top: 10px; }
+        h1 { 
+            font-family: 'Orbitron', sans-serif;
+            margin: 0; 
+            font-size: clamp(2rem, 8vw, 4rem); 
+            text-transform: uppercase; 
+            letter-spacing: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.3));
+        }
+
+        .subtitle { 
+            font-size: 1.1rem; 
+            color: #94a3b8;
+            margin-top: 1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
 
         .container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+            max-width: 1100px;
+            margin: 0 auto 4rem auto;
+            padding: 0 1.5rem;
         }
 
-        section {
-            background: var(--gray);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border-left: 5px solid var(--primary);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            font-size: 1.5rem;
             text-align: center;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
 
-        h2 { 
-            color: var(--primary); 
-            border-bottom: 1px solid #334155; 
-            padding-bottom: 0.5rem; 
-            display: inline-block;
-            margin-bottom: 2rem;
+        h2::before, h2::after {
+            content: "";
+            height: 1px;
+            width: 50px;
+            background: var(--primary);
+            opacity: 0.5;
         }
 
+        /* --- Grid & Cards --- */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            text-align: left;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
         }
 
         .card {
-            background: rgba(255,255,255,0.03);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 2.5rem 1.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(34, 211, 238, 0.4);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        .role-tag {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--secondary);
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        .name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            margin: 0;
+            color: #fff;
             text-align: center;
         }
 
-        .card:hover { 
-            transform: translateY(-5px); 
-            background: rgba(255,255,255,0.07);
-            border-color: var(--secondary);
-            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
-        }
-
-        .role-tag {
-            display: inline-block;
-            background: var(--secondary);
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
+        .discord-id {
+            font-family: 'Courier New', monospace;
             font-size: 0.8rem;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .name { 
-            color: var(--light); 
-            font-size: 1.4rem; 
-            margin: 0 0 10px 0; 
-            font-weight: bold;
+            color: var(--primary);
+            opacity: 0.7;
+            margin: 0.5rem 0 1.5rem 0;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
         }
 
         .description {
             color: #94a3b8;
             font-size: 0.95rem;
+            text-align: center;
             margin: 0;
         }
 
-        .tech-list {
-            list-style: none;
-            padding: 0;
-            color: #cbd5e1;
-            font-family: monospace;
-            font-size: 1.1rem;
+        footer {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #475569;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
         }
 
-        .tech-list li {
-            margin: 5px 0;
-        }
+        .copyright { color: var(--primary); font-weight: bold; }
 
-        .tech-list li::before {
-            content: "> ";
-            color: var(--primary);
-        }
-
-        footer { 
-            text-align: center; 
-            padding: 4rem 2rem; 
-            color: #64748b; 
-            font-size: 0.9rem; 
-            border-top: 1px solid #1e293b;
-            margin-top: 4rem;
-        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>L'équipage</h1>
-        <p class="subtitle">L'équipe derrière le projet</p>
+        <h1>L'ÉQUIPAGE</h1>
+        <p class="subtitle">Mission Jam 2026</p>
     </header>
 
-    <div class="container">
+    <main class="container">
         
         <section id="equipe">
-            <h2>L'Équipage Principal</h2>
+            <h2>Membres de la mission</h2>
             
             <div class="grid">
                 <article class="card">
-                    <span class="role-tag">Direction & Développement</span>
-                    <h3 class="name">@gianni.core (Discord) — Id : 1188155402794307685</h3>
-                    <p class="description">Gestion : aspect légal, documentation, identité visuelle, forum Discord et développement.<br>@gianni.core a géré la majeure partie du projet, mais n'aurait pas pu le mener à bien sans le reste de l'équipe.</p>
+                    <span class="role-tag">Direction & Dev</span>
+                    <h3 class="name">@gianni.core</h3>
+                    <span class="discord-id">ID: 1188155402794307685</span>
+                    <p class="description">Architecte du projet : gère l'aspect légal, la documentation, l'identité visuelle et le développement global.</p>
                 </article>
 
                 <article class="card">
-                    <span class="role-tag">Conseil, Orga & Peaufinage</span>
-                    <h3 class="name">@blakpanter0358 (Discord) — Id : 1337310179254997054</h3>
-                    <p class="description">@blakpanter0358 a principalement donné son avis, géré le lancement du projet et peaufiné les derniers détails à la fin.</p>
+                    <span class="role-tag">Orga & Finitions</span>
+                    <h3 class="name">@blakpanter0358</h3>
+                    <span class="discord-id">ID: 1337310179254997054</span>
+                    <p class="description">Stratège du lancement : responsable de la coordination, des conseils critiques et du peaufinage final.</p>
                 </article>
 
                 <article class="card">
-                    <span class="role-tag">Responsable Design</span>
-                    <h3 class="name">@aliwert23 (Discord) — Id : 1358921365893284044</h3>
-                    <p class="description">@aliwert23 a principalement participé à la conception du design et des visuels.</p>
+                    <span class="role-tag">Design Visuel</span>
+                    <h3 class="name">@aliwert23</h3>
+                    <span class="discord-id">ID: 1358921365893284044</span>
+                    <p class="description">Artiste de bord : a conçu l'univers graphique, les interfaces et l'esthétique visuelle du projet.</p>
                 </article>
+
                 <article class="card">
-                    <span class="role-tag">Cenario</span>
-                    <h3 class="name">@espace6140 (Discord) — Id : 1124712289895985276</h3>
-                    <p class="description">@espace6140 est considéré comme le responsable des scénarios grâce à son imagination, mais il a également participé au développement du jeu.</p>
+                    <span class="role-tag">Scénario & Dev</span>
+                    <h3 class="name">@espace6140</h3>
+                    <span class="discord-id">ID: 1124712289895985276</span>
+                    <p class="description">Maitre du récit : a imaginé l'univers et l'histoire tout en prêtant main forte sur le code.</p>
                 </article>
             </div>
         </section>
-    </div>
+
+    </main>
 
     <footer>
-        &copy; Game Jam 2026<br>
-        <span style="font-size: 0.8rem; opacity: 0.5;">[Fin]</span>
+        <span class="copyright">&copy; Game Jam 2026</span><br>
+        Systèmes opérationnels — Fin de transmission
     </footer>
 
 </body>
