@@ -2,18 +2,18 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Spatial Bowling - Pro Edition</title>
+    <title>Spatial Bowling - Texture Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #020105; font-family: 'Orbitron', sans-serif; color: #fff; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #010103; font-family: 'Orbitron', sans-serif; color: #fff; }
         #game-ui { position: absolute; top: 20px; left: 20px; pointer-events: none; z-index: 5; }
-        .stat-box { background: rgba(0, 200, 255, 0.1); border-left: 4px solid #00d4ff; padding: 15px; backdrop-filter: blur(8px); border-radius: 0 10px 10px 0; }
-        #power-zone { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); text-align: center; }
+        .stat-box { background: rgba(0, 212, 255, 0.1); border-left: 4px solid #00d4ff; padding: 15px; backdrop-filter: blur(8px); border-radius: 0 10px 10px 0; }
+        #power-zone { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); text-align: center; transition: opacity 0.3s; }
         #power-bg { width: 350px; height: 25px; background: rgba(255,255,255,0.1); border: 2px solid #00d4ff; border-radius: 15px; overflow: hidden; position: relative; }
         #power-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00d4ff, #ff00ea); box-shadow: 0 0 15px #00d4ff; }
         #instructions { margin-bottom: 10px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #00d4ff; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        canvas { display: block; cursor: crosshair; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        canvas { display: block; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
@@ -21,22 +21,22 @@
 
 <div id="game-ui">
     <div class="stat-box">
-        <div id="info-type" style="font-size: 1.2em; color: #00d4ff;">INITIALISATION...</div>
-        <div id="info-details" style="font-size: 0.8em; margin-top: 5px; color: #aaa;">PRÊT AU LANCEMENT</div>
+        <div id="info-type" style="font-size: 1.2em; color: #00d4ff;">CHARGEMENT...</div>
+        <div id="info-details" style="font-size: 0.8em; margin-top: 5px; color: #aaa;">PRÊT</div>
     </div>
 </div>
 
 <div id="power-zone">
-    <div id="instructions">Attendre le max... CLIQUE !</div>
+    <div id="instructions">CLIQUE POUR LANCER !</div>
     <div id="power-bg"><div id="power-bar"></div></div>
 </div>
 
 <script>
 /**
- * SPATIAL BOWLING - V14 (PRO ARCADE)
+ * SPATIAL BOWLING - V15 (IMAGE TEXTURES & FIXES)
  */
 
-const { Engine, Bodies, Composite, Body, Events, Vector } = Matter;
+const { Engine, Bodies, Composite, Body, Events } = Matter;
 const engine = Engine.create();
 engine.world.gravity.y = 0;
 
@@ -49,6 +49,8 @@ let planet, pins = [];
 let state = "WAITING"; 
 let pwr = 0, pwrDir = 1;
 let currentConfig = { kg: 100, lvl: 10, z: 1, type: "Terre" };
+let planetImg = new Image();
+let imgLoaded = false;
 
 function resize() {
     canvas.width = window.innerWidth;
@@ -62,27 +64,37 @@ window.addEventListener('resize', resize);
 resize();
 
 function setup(data) {
-    currentConfig = data;
+    // Reset complet pour éviter les bugs
     Composite.clear(engine.world);
-    particles = []; trail = []; state = "CHARGING";
+    particles = []; trail = []; 
+    currentConfig = data;
+    imgLoaded = false;
+    state = "CHARGING";
+    
     document.getElementById('power-zone').style.opacity = '1';
     document.getElementById('info-type').innerText = data.type.toUpperCase();
     document.getElementById('info-details').innerText = `MASSE: ${data.kg}kg | Z: ${data.z}`;
 
-    // 1. L'ASTRE (Position de départ)
+    // --- CHARGEMENT DE L'IMAGE ---
+    const imgName = data.type.toLowerCase().trim();
+    planetImg = new Image();
+    planetImg.onload = () => { imgLoaded = true; };
+    planetImg.onerror = () => { imgLoaded = false; console.warn("Image non trouvée, fallback 3D"); };
+    planetImg.src = `https://user-anonymous-dev.github.io/bowling-spatiale_/picture/astres/${imgName}.png`;
+
+    // 1. L'ASTRE
     const r = Math.max(35, Math.min(data.kg / 2.5, 90));
     planet = Bodies.circle(150, canvas.height/2, r, {
-        mass: data.kg, restitution: 0.5, frictionAir: 0.006
+        mass: data.kg, restitution: 0.5, frictionAir: 0.006, label: 'Astre'
     });
 
-    // 2. LES 10 QUILLES (Formation Triangle)
+    // 2. LES 10 QUILLES
     pins = [];
-    const pMass = (data.kg / 10) * (1 + (data.z / 5000)); // Équilibrage du poids Z
+    const pMass = (data.kg / 10) * (1 + (data.z / 5000)); 
     const startX = canvas.width * 0.7;
     const centerY = canvas.height / 2;
     
-    let count = 0;
-    for (let i = 0; i < 4; i++) { // 4 rangées
+    for (let i = 0; i < 4; i++) {
         for (let j = 0; j <= i; j++) {
             const p = Bodies.rectangle(
                 startX + (i * 45), centerY + (j * 55) - (i * 27.5),
@@ -100,16 +112,15 @@ window.addEventListener('mousedown', () => {
     if (state === "CHARGING") {
         state = "LAUNCHED";
         document.getElementById('power-zone').style.opacity = '0';
-        // Force de frappe
         const f = (pwr / 100) * (currentConfig.lvl * currentConfig.kg / 1800);
         Body.applyForce(planet, planet.position, { x: f, y: 0 });
-        // Rotation initiale
-        Body.setAngularVelocity(planet, 0.12 * (pwr/100)); 
+        Body.setAngularVelocity(planet, 0.15 * (pwr/100)); 
         setTimeout(checkScore, 5000);
     }
 });
 
 function checkScore() {
+    if (state !== "LAUNCHED") return;
     const down = pins.filter(p => p.isDown).length;
     state = "ENDED";
     currentConfig.result = down === 10 ? "PERFECT STRIKE" : (down > 0 ? `${down} QUILLES` : "RATÉ");
@@ -124,54 +135,53 @@ function draw() {
         document.getElementById('power-bar').style.width = pwr + "%";
     }
 
-    // BG & Stars
-    ctx.fillStyle = '#020105'; ctx.fillRect(0,0,canvas.width, canvas.height);
+    // Fond
+    ctx.fillStyle = '#010103'; ctx.fillRect(0,0,canvas.width, canvas.height);
     ctx.fillStyle = "#fff"; stars.forEach(s => { ctx.globalAlpha = s.o; ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, 7); ctx.fill(); });
     ctx.globalAlpha = 1;
 
-    // Trail
+    // Traînée
     if (state === "LAUNCHED" && planet) {
         trail.push({x: planet.position.x, y: planet.position.y});
-        if(trail.length > 20) trail.shift();
-        ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)'; ctx.lineWidth = planet.circleRadius*1.5;
+        if(trail.length > 15) trail.shift();
+        ctx.strokeStyle = 'rgba(0, 212, 255, 0.15)'; ctx.lineWidth = planet.circleRadius;
         ctx.beginPath(); trail.forEach(t => ctx.lineTo(t.x, t.y)); ctx.stroke();
     }
 
-    // Pins
+    // Quilles
     pins.forEach(p => {
         if(!p.isDown && (Math.abs(p.angle) > 0.6 || Math.abs(p.position.x - p.ox) > 50)) p.isDown = true;
         ctx.save();
         ctx.translate(p.position.x, p.position.y); ctx.rotate(p.angle);
-        // Couleur selon Z
         const intensity = Math.max(40, 160 - (currentConfig.z / 1000));
         ctx.fillStyle = p.isDown ? '#222' : `rgb(${intensity}, 50, 255)`;
         ctx.beginPath(); ctx.roundRect(-11, -24, 22, 48, 4); ctx.fill();
         ctx.restore();
     });
 
-    // Planet (The "Astre")
+    // --- DESSIN DE L'ASTRE (IMAGE OU 3D) ---
     if (planet) {
         ctx.save();
         ctx.translate(planet.position.x, planet.position.y);
-        ctx.rotate(planet.angle); // Rotation visible !
+        ctx.rotate(planet.angle);
         
-        // Couleur selon Type
-        let c1 = "#00d4ff", c2 = "#004466";
-        if(currentConfig.type.toLowerCase().includes("terre")) { c1 = "#44ff88"; c2 = "#1144aa"; }
-        
-        const g = ctx.createRadialGradient(-planet.circleRadius/3, -planet.circleRadius/3, 5, 0, 0, planet.circleRadius);
-        g.addColorStop(0, '#fff'); g.addColorStop(0.2, c1); g.addColorStop(1, c2);
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(0, 0, planet.circleRadius, 0, 7); ctx.fill();
-        
-        // Détails de surface (pour voir la rotation)
-        ctx.fillStyle = "rgba(0,0,0,0.15)";
-        ctx.beginPath(); ctx.arc(planet.circleRadius/2, -5, planet.circleRadius/4, 0, 7); ctx.fill();
+        if (imgLoaded) {
+            // Dessine l'image de la planète
+            const r = planet.circleRadius;
+            ctx.drawImage(planetImg, -r, -r, r*2, r*2);
+        } else {
+            // Fallback si pas d'image
+            let c1 = "#00d4ff", c2 = "#004466";
+            const g = ctx.createRadialGradient(-5, -5, 5, 0, 0, planet.circleRadius);
+            g.addColorStop(0, '#fff'); g.addColorStop(0.2, c1); g.addColorStop(1, c2);
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(0, 0, planet.circleRadius, 0, 7); ctx.fill();
+        }
         ctx.restore();
     }
 
     if (state === "ENDED") {
-        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,canvas.width, canvas.height);
         ctx.textAlign = "center"; ctx.fillStyle = "#00d4ff"; ctx.font = "bold 50px Orbitron";
         ctx.fillText(currentConfig.result, canvas.width/2, canvas.height/2);
     }
@@ -179,14 +189,17 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
+// Support des messages
 window.addEventListener('message', (e) => {
+    if (typeof e.data !== 'string') return;
     const m = e.data.match(/(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i);
     if (m) setup({ kg: +m[1], type: m[2].trim(), lvl: +m[3], z: +m[4] });
 });
 
 draw();
-// Test auto
-setup({ kg: 120333, type: 'Terre', lvl: 260, z: 105533 });
+
+// Test initial (Cherchera terre.png)
+setup({ kg: 120, type: 'Terre', lvl: 154, z: 355 });
 </script>
 </body>
 </html>
