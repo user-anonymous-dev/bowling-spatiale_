@@ -2,36 +2,37 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Spatial Bowling - Ultra Graphics</title>
+    <title>Spatial Bowling - Arcade Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            overflow: hidden;
-            background-color: #020205; /* Noir plus profond */
-            font-family: 'Orbitron', sans-serif;
-        }
-
-        /* Interface UI en CSS */
-        #game-ui {
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #020205; font-family: 'Orbitron', sans-serif; color: white; }
+        
+        /* Jauge de puissance */
+        #power-container {
             position: absolute;
-            top: 20px; left: 20px;
-            color: #00f2ff;
+            bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            width: 300px; height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #00f2ff;
+            border-radius: 10px;
+            display: none; /* Apparaît au chargement */
+        }
+        #power-bar {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, #00f2ff, #ff00ff);
+            border-radius: 8px;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 60px; left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
             text-shadow: 0 0 10px #00f2ff;
-            pointer-events: none;
-            z-index: 10;
         }
-
-        .stat-box {
-            background: rgba(0, 242, 255, 0.05);
-            border-left: 3px solid #00f2ff;
-            padding: 10px 20px;
-            margin-bottom: 10px;
-            backdrop-filter: blur(5px);
-        }
-
-        canvas { display: block; }
+        #game-ui { position: absolute; top: 20px; left: 20px; pointer-events: none; }
+        .stat-box { background: rgba(0, 242, 255, 0.05); border-left: 3px solid #00f2ff; padding: 10px 20px; backdrop-filter: blur(5px); }
+        canvas { display: block; cursor: crosshair; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
@@ -40,17 +41,21 @@
 <div id="game-ui">
     <div class="stat-box">
         <div id="info-type">SYSTÈME : EN ATTENTE</div>
-        <div id="info-mass">MASSE : 0 KG</div>
+        <div id="info-z">DIFFICULTÉ (Z) : 0</div>
     </div>
+</div>
+
+<div id="instructions">CLIQUE POUR LANCER L'ASTRE</div>
+<div id="power-container">
+    <div id="power-bar"></div>
 </div>
 
 <script>
 /**
- * SPATIAL BOWLING - V12 (ULTRA GRAPHICS)
+ * SPATIAL BOWLING - V13 (ARCADE CLIC & ROTATION)
  */
 
 const { Engine, Bodies, Composite, Body, Events, Vector } = Matter;
-
 const engine = Engine.create();
 engine.world.gravity.y = 0;
 
@@ -58,205 +63,153 @@ const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 document.body.appendChild(canvas);
 
-// --- GÉNÉRATION DU FOND ÉTOILÉ ---
-const stars = [];
-function createStars() {
-    stars.length = 0;
-    for(let i=0; i<200; i++) {
-        stars.push({
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
-            size: Math.random() * 2,
-            opacity: Math.random()
-        });
-    }
-}
-
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    createStars();
-}
-window.addEventListener('resize', resize);
-resize();
-
+let stars = [];
 let particles = [];
 let astreTrail = [];
 let currentAstre = null;
 let currentPins = [];
-let gameState = "WAITING";
-let gameResult = "";
-let timerResult = 0;
+let gameState = "WAITING"; // WAITING, CHARGING, LAUNCHED, ENDED
+let power = 0;
+let powerDirection = 1;
+let currentData = { kg: 100, lvl: 10, z: 1, type: "Terre" };
 
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = Array.from({length: 200}, () => ({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        size: Math.random() * 2, opacity: Math.random()
+    }));
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- INITIALISATION ---
 function setupScene(data) {
+    currentData = data;
     Composite.clear(engine.world);
-    particles = []; astreTrail = []; gameResult = "";
-    gameState = "WAITING";
-    
-    // Update UI
+    particles = []; astreTrail = []; gameState = "CHARGING";
+    document.getElementById('power-container').style.display = 'block';
+    document.getElementById('instructions').innerText = "CLIQUE POUR BLOQUER LA PUISSANCE !";
     document.getElementById('info-type').innerText = `ASTRE : ${data.type.toUpperCase()}`;
-    document.getElementById('info-mass').innerText = `MASSE : ${data.kg} KG | LVL : ${data.lvl}`;
+    document.getElementById('info-z').innerText = `POIDS DES QUILLES (Z) : ${data.z}`;
 
-    const radius = Math.max(30, Math.min(data.kg / 2.2, 100));
-    currentAstre = Bodies.circle(100, canvas.height / 2, radius, {
-        mass: data.kg, restitution: 0.4, frictionAir: 0.005
+    // 1. L'ASTRE
+    const radius = Math.max(35, Math.min(data.kg / 2, 100));
+    currentAstre = Bodies.circle(150, canvas.height / 2, radius, {
+        mass: data.kg, restitution: 0.5, frictionAir: 0.005
     });
 
+    // 2. LES 10 QUILLES (Standard)
     currentPins = [];
-    const pinCount = Math.min(15 + Math.floor(data.z / 500), 50);
-    const pinMass = (data.kg / 5) * (1 + (data.z / 1000)); 
-    const startX = canvas.width * 0.6;
+    const pinMass = (data.kg / 8) * (1 + (data.z / 1000)); 
+    const startX = canvas.width * 0.7;
     const centerY = canvas.height / 2;
-
-    for (let i = 0; i < pinCount; i++) {
-        let row = Math.floor(Math.sqrt(2 * i + 0.25) - 0.5);
-        let col = i - (row * (row + 1) / 2);
-        const pin = Bodies.rectangle(
-            startX + (row * 35), centerY + (col * 45) - (row * 22.5),
-            20, 42, { restitution: 0.3, friction: 0.8 }
-        );
-        Body.setMass(pin, pinMass);
-        pin.startX = pin.position.x;
-        pin.isDead = false; 
-        currentPins.push(pin);
-    }
+    const rows = 4; // Pour faire 10 quilles (1+2+3+4)
     
+    let pinIdx = 0;
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c <= r; c++) {
+            const pin = Bodies.rectangle(
+                startX + (r * 45), centerY + (c * 55) - (r * 27.5),
+                22, 45, { restitution: 0.3, friction: 0.5 }
+            );
+            Body.setMass(pin, pinMass);
+            pin.startX = pin.position.x;
+            pin.isDead = false;
+            currentPins.push(pin);
+        }
+    }
     Composite.add(engine.world, [currentAstre, ...currentPins]);
-
-    setTimeout(() => {
-        gameState = "LAUNCHED";
-        const forceMagnitude = (data.lvl * data.kg) / 4000;
-        Body.applyForce(currentAstre, currentAstre.position, { x: forceMagnitude, y: 0 });
-        timerResult = Date.now() + 5000;
-    }, 800);
 }
 
+// --- CONTROLE DU CLIC ---
+window.addEventListener('mousedown', () => {
+    if (gameState === "CHARGING") {
+        launchAstre();
+    }
+});
+
+function launchAstre() {
+    gameState = "LAUNCHED";
+    document.getElementById('power-container').style.display = 'none';
+    document.getElementById('instructions').innerText = "";
+    
+    // Force basée sur la jauge + lvl de l'astre
+    const finalForce = (power / 100) * (currentData.lvl * currentData.kg / 1500);
+    Body.applyForce(currentAstre, currentAstre.position, { x: finalForce, y: 0 });
+    
+    // ROTATION : On donne une vitesse angulaire
+    Body.setAngularVelocity(currentAstre, 0.15); 
+    
+    setTimeout(() => { checkFinalScore(); }, 5000);
+}
+
+function checkFinalScore() {
+    let fallen = currentPins.filter(p => p.isDead).length;
+    gameResult = fallen === 10 ? "PERFECT STRIKE !" : (fallen > 0 ? `${fallen} QUILLES !` : "LOUPE...");
+    gameState = "ENDED";
+}
+
+// --- BOUCLE DE JEU ---
 function draw() {
     Engine.update(engine, 16.66);
     
-    // 1. FOND DE L'ESPACE
-    const bgGrad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
-    bgGrad.addColorStop(0, '#0a0a1a');
-    bgGrad.addColorStop(1, '#020205');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 2. ÉTOILES
-    ctx.fillStyle = "white";
-    stars.forEach(s => {
-        ctx.globalAlpha = s.opacity;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
-        ctx.fill();
-    });
-    ctx.globalAlpha = 1;
-
-    // 3. TRAÎNÉE (EFFET NEON)
-    if (currentAstre && gameState === "LAUNCHED") {
-        astreTrail.push({ x: currentAstre.position.x, y: currentAstre.position.y });
-        if (astreTrail.length > 25) astreTrail.shift();
-        ctx.beginPath();
-        ctx.strokeStyle = '#00f2ff';
-        ctx.lineWidth = currentAstre.circleRadius * 0.8;
-        ctx.lineCap = 'round';
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#00f2ff';
-        astreTrail.forEach((p, i) => {
-            ctx.globalAlpha = i / astreTrail.length * 0.3;
-            ctx.lineTo(p.x, p.y);
-        });
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1;
+    // Jauge de puissance
+    if (gameState === "CHARGING") {
+        power += 2 * powerDirection;
+        if (power >= 100 || power <= 0) powerDirection *= -1;
+        document.getElementById('power-bar').style.width = power + "%";
     }
 
-    // 4. DESSIN DES QUILLES (STYLISÉES)
-    currentPins.forEach(pin => {
-        if (!pin.isDead && (Math.abs(pin.angle) > 0.5 || Math.abs(pin.position.x - pin.startX) > 40)) {
-            pin.isDead = true; 
-        }
+    // Dessin Fond
+    ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white"; stars.forEach(s => { ctx.globalAlpha = s.opacity; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill(); });
+    ctx.globalAlpha = 1;
 
+    // Traînée & Rotation visuelle
+    if (currentAstre && gameState === "LAUNCHED") {
+        astreTrail.push({ x: currentAstre.position.x, y: currentAstre.position.y });
+        if (astreTrail.length > 20) astreTrail.shift();
+        ctx.beginPath(); ctx.strokeStyle = 'rgba(0, 242, 255, 0.3)'; ctx.lineWidth = currentAstre.circleRadius;
+        astreTrail.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+    }
+
+    // Dessin Quilles
+    currentPins.forEach(pin => {
+        if (!pin.isDead && (Math.abs(pin.angle) > 0.5 || Math.abs(pin.position.x - pin.startX) > 40)) pin.isDead = true;
         ctx.save();
         ctx.translate(pin.position.x, pin.position.y);
         ctx.rotate(pin.angle);
-        
-        // Style Quille
-        if (pin.isDead) {
-            ctx.fillStyle = '#1e293b';
-            ctx.strokeStyle = '#334155';
-        } else {
-            // Dégradé pour la quille "en vie"
-            const pinGrad = ctx.createLinearGradient(-10, -21, 10, 21);
-            pinGrad.addColorStop(0, '#8B5CF6');
-            pinGrad.addColorStop(1, '#6366f1');
-            ctx.fillStyle = pinGrad;
-            ctx.strokeStyle = '#c4b5fd';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#8B5CF6';
-        }
-        
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(-10, -21, 20, 42, 5); // Bord arrondis
-        ctx.fill();
-        ctx.stroke();
+        // Couleur : plus Z est haut, plus le violet est sombre (poids)
+        const zShade = Math.max(50, 150 - (currentData.z / 100));
+        ctx.fillStyle = pin.isDead ? '#1e293b' : `rgb(${zShade}, 92, 246)`;
+        ctx.beginPath(); ctx.roundRect(-11, -22, 22, 44, 5); ctx.fill();
         ctx.restore();
     });
 
-    // 5. DESSIN DE LA PLANÈTE (DÉGRADÉ 3D)
+    // Dessin Astre (Planète)
     if (currentAstre) {
         ctx.save();
         ctx.translate(currentAstre.position.x, currentAstre.position.y);
+        ctx.rotate(currentAstre.angle); // Applique la rotation physique
         
-        // Halo extérieur
-        const glow = ctx.createRadialGradient(0, 0, currentAstre.circleRadius, 0, 0, currentAstre.circleRadius + 20);
-        glow.addColorStop(0, 'rgba(0, 242, 255, 0.3)');
-        glow.addColorStop(1, 'rgba(0, 242, 255, 0)');
-        ctx.fillStyle = glow;
-        ctx.beginPath(); ctx.arc(0, 0, currentAstre.circleRadius + 20, 0, Math.PI*2); ctx.fill();
-
-        // Sphère
-        const sphereGrad = ctx.createRadialGradient(-currentAstre.circleRadius/3, -currentAstre.circleRadius/3, currentAstre.circleRadius/10, 0, 0, currentAstre.circleRadius);
-        sphereGrad.addColorStop(0, '#ffffff'); // Reflet lumière
-        sphereGrad.addColorStop(0.2, '#00f2ff');
-        sphereGrad.addColorStop(1, '#003344'); // Ombre
+        // Sphère 3D
+        const grad = ctx.createRadialGradient(-10, -10, 5, 0, 0, currentAstre.circleRadius);
+        grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.3, '#00f2ff'); grad.addColorStop(1, '#004455');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(0, 0, currentAstre.circleRadius, 0, Math.PI*2); ctx.fill();
         
-        ctx.fillStyle = sphereGrad;
-        ctx.beginPath();
-        ctx.arc(0, 0, currentAstre.circleRadius, 0, Math.PI*2);
-        ctx.fill();
+        // Ajout d'un petit "cratère" pour voir la rotation
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.beginPath(); ctx.arc(currentAstre.circleRadius/2, 0, 10, 0, Math.PI*2); ctx.fill();
         ctx.restore();
     }
 
-    // 6. PARTICULES
-    particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        ctx.globalAlpha = p.life; ctx.fillStyle = '#00f2ff';
-        ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2); ctx.fill();
-        if (p.life <= 0) particles.splice(i, 1);
-    });
-    ctx.globalAlpha = 1;
-
-    // 7. UI DE FIN
-    if (gameState === "LAUNCHED" && Date.now() > timerResult) {
-        let fallen = currentPins.filter(p => p.isDead).length;
-        const ratio = fallen / currentPins.length;
-        if (ratio >= 0.95) gameResult = "STRIKE TOTAL !";
-        else if (ratio > 0.1) gameResult = "IMPACT RÉUSSI";
-        else gameResult = "ÉCHEC DE MISSION";
-        gameState = "ENDED";
-    }
-
     if (gameState === "ENDED") {
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.textAlign = "center"; 
-        ctx.fillStyle = "#00f2ff";
-        ctx.shadowBlur = 20; ctx.shadowColor = "#00f2ff";
-        ctx.font = "bold 60px Orbitron";
+        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.textAlign = "center"; ctx.fillStyle = "#00f2ff"; ctx.font = "bold 50px Orbitron";
         ctx.fillText(gameResult, canvas.width / 2, canvas.height / 2);
-        ctx.font = "20px Orbitron";
-        ctx.fillText("SYSTÈME PRÊT POUR NOUVELLE ENTRÉE", canvas.width / 2, canvas.height / 2 + 80);
     }
 
     requestAnimationFrame(draw);
@@ -269,9 +222,7 @@ window.addEventListener('message', (e) => {
 });
 
 draw();
-
-// Simulation test
-setupScene({ kg: 120, type: 'Terre', lvl: 133, z: 44145 });
+setupScene({ kg: 120, type: 'Terre', lvl: 150, z: 500 });
 </script>
 </body>
 </html>
