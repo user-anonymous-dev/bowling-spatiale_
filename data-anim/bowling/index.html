@@ -2,36 +2,17 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Spatial Bowling - Arcade Edition</title>
+    <title>Spatial Bowling - Pro Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #020205; font-family: 'Orbitron', sans-serif; color: white; }
-        
-        /* Jauge de puissance */
-        #power-container {
-            position: absolute;
-            bottom: 30px; left: 50%;
-            transform: translateX(-50%);
-            width: 300px; height: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #00f2ff;
-            border-radius: 10px;
-            display: none; /* Apparaît au chargement */
-        }
-        #power-bar {
-            width: 0%; height: 100%;
-            background: linear-gradient(90deg, #00f2ff, #ff00ff);
-            border-radius: 8px;
-        }
-        #instructions {
-            position: absolute;
-            bottom: 60px; left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            text-shadow: 0 0 10px #00f2ff;
-        }
-        #game-ui { position: absolute; top: 20px; left: 20px; pointer-events: none; }
-        .stat-box { background: rgba(0, 242, 255, 0.05); border-left: 3px solid #00f2ff; padding: 10px 20px; backdrop-filter: blur(5px); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #020105; font-family: 'Orbitron', sans-serif; color: #fff; }
+        #game-ui { position: absolute; top: 20px; left: 20px; pointer-events: none; z-index: 5; }
+        .stat-box { background: rgba(0, 200, 255, 0.1); border-left: 4px solid #00d4ff; padding: 15px; backdrop-filter: blur(8px); border-radius: 0 10px 10px 0; }
+        #power-zone { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); text-align: center; }
+        #power-bg { width: 350px; height: 25px; background: rgba(255,255,255,0.1); border: 2px solid #00d4ff; border-radius: 15px; overflow: hidden; position: relative; }
+        #power-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00d4ff, #ff00ea); box-shadow: 0 0 15px #00d4ff; }
+        #instructions { margin-bottom: 10px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #00d4ff; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         canvas { display: block; cursor: crosshair; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
@@ -40,19 +21,19 @@
 
 <div id="game-ui">
     <div class="stat-box">
-        <div id="info-type">SYSTÈME : EN ATTENTE</div>
-        <div id="info-z">DIFFICULTÉ (Z) : 0</div>
+        <div id="info-type" style="font-size: 1.2em; color: #00d4ff;">INITIALISATION...</div>
+        <div id="info-details" style="font-size: 0.8em; margin-top: 5px; color: #aaa;">PRÊT AU LANCEMENT</div>
     </div>
 </div>
 
-<div id="instructions">CLIQUE POUR LANCER L'ASTRE</div>
-<div id="power-container">
-    <div id="power-bar"></div>
+<div id="power-zone">
+    <div id="instructions">Attendre le max... CLIQUE !</div>
+    <div id="power-bg"><div id="power-bar"></div></div>
 </div>
 
 <script>
 /**
- * SPATIAL BOWLING - V13 (ARCADE CLIC & ROTATION)
+ * SPATIAL BOWLING - V14 (PRO ARCADE)
  */
 
 const { Engine, Bodies, Composite, Body, Events, Vector } = Matter;
@@ -63,166 +44,149 @@ const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 document.body.appendChild(canvas);
 
-let stars = [];
-let particles = [];
-let astreTrail = [];
-let currentAstre = null;
-let currentPins = [];
-let gameState = "WAITING"; // WAITING, CHARGING, LAUNCHED, ENDED
-let power = 0;
-let powerDirection = 1;
-let currentData = { kg: 100, lvl: 10, z: 1, type: "Terre" };
+let stars = [], particles = [], trail = [];
+let planet, pins = [];
+let state = "WAITING"; 
+let pwr = 0, pwrDir = 1;
+let currentConfig = { kg: 100, lvl: 10, z: 1, type: "Terre" };
 
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    stars = Array.from({length: 200}, () => ({
+    stars = Array.from({length: 150}, () => ({
         x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        size: Math.random() * 2, opacity: Math.random()
+        s: Math.random() * 2, o: Math.random()
     }));
 }
 window.addEventListener('resize', resize);
 resize();
 
-// --- INITIALISATION ---
-function setupScene(data) {
-    currentData = data;
+function setup(data) {
+    currentConfig = data;
     Composite.clear(engine.world);
-    particles = []; astreTrail = []; gameState = "CHARGING";
-    document.getElementById('power-container').style.display = 'block';
-    document.getElementById('instructions').innerText = "CLIQUE POUR BLOQUER LA PUISSANCE !";
-    document.getElementById('info-type').innerText = `ASTRE : ${data.type.toUpperCase()}`;
-    document.getElementById('info-z').innerText = `POIDS DES QUILLES (Z) : ${data.z}`;
+    particles = []; trail = []; state = "CHARGING";
+    document.getElementById('power-zone').style.opacity = '1';
+    document.getElementById('info-type').innerText = data.type.toUpperCase();
+    document.getElementById('info-details').innerText = `MASSE: ${data.kg}kg | Z: ${data.z}`;
 
-    // 1. L'ASTRE
-    const radius = Math.max(35, Math.min(data.kg / 2, 100));
-    currentAstre = Bodies.circle(150, canvas.height / 2, radius, {
-        mass: data.kg, restitution: 0.5, frictionAir: 0.005
+    // 1. L'ASTRE (Position de départ)
+    const r = Math.max(35, Math.min(data.kg / 2.5, 90));
+    planet = Bodies.circle(150, canvas.height/2, r, {
+        mass: data.kg, restitution: 0.5, frictionAir: 0.006
     });
 
-    // 2. LES 10 QUILLES (Standard)
-    currentPins = [];
-    const pinMass = (data.kg / 8) * (1 + (data.z / 1000)); 
+    // 2. LES 10 QUILLES (Formation Triangle)
+    pins = [];
+    const pMass = (data.kg / 10) * (1 + (data.z / 5000)); // Équilibrage du poids Z
     const startX = canvas.width * 0.7;
     const centerY = canvas.height / 2;
-    const rows = 4; // Pour faire 10 quilles (1+2+3+4)
     
-    let pinIdx = 0;
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c <= r; c++) {
-            const pin = Bodies.rectangle(
-                startX + (r * 45), centerY + (c * 55) - (r * 27.5),
-                22, 45, { restitution: 0.3, friction: 0.5 }
+    let count = 0;
+    for (let i = 0; i < 4; i++) { // 4 rangées
+        for (let j = 0; j <= i; j++) {
+            const p = Bodies.rectangle(
+                startX + (i * 45), centerY + (j * 55) - (i * 27.5),
+                22, 48, { restitution: 0.4, friction: 0.3 }
             );
-            Body.setMass(pin, pinMass);
-            pin.startX = pin.position.x;
-            pin.isDead = false;
-            currentPins.push(pin);
+            Body.setMass(p, pMass);
+            p.isDown = false; p.ox = p.position.x;
+            pins.push(p);
         }
     }
-    Composite.add(engine.world, [currentAstre, ...currentPins]);
+    Composite.add(engine.world, [planet, ...pins]);
 }
 
-// --- CONTROLE DU CLIC ---
 window.addEventListener('mousedown', () => {
-    if (gameState === "CHARGING") {
-        launchAstre();
+    if (state === "CHARGING") {
+        state = "LAUNCHED";
+        document.getElementById('power-zone').style.opacity = '0';
+        // Force de frappe
+        const f = (pwr / 100) * (currentConfig.lvl * currentConfig.kg / 1800);
+        Body.applyForce(planet, planet.position, { x: f, y: 0 });
+        // Rotation initiale
+        Body.setAngularVelocity(planet, 0.12 * (pwr/100)); 
+        setTimeout(checkScore, 5000);
     }
 });
 
-function launchAstre() {
-    gameState = "LAUNCHED";
-    document.getElementById('power-container').style.display = 'none';
-    document.getElementById('instructions').innerText = "";
-    
-    // Force basée sur la jauge + lvl de l'astre
-    const finalForce = (power / 100) * (currentData.lvl * currentData.kg / 1500);
-    Body.applyForce(currentAstre, currentAstre.position, { x: finalForce, y: 0 });
-    
-    // ROTATION : On donne une vitesse angulaire
-    Body.setAngularVelocity(currentAstre, 0.15); 
-    
-    setTimeout(() => { checkFinalScore(); }, 5000);
+function checkScore() {
+    const down = pins.filter(p => p.isDown).length;
+    state = "ENDED";
+    currentConfig.result = down === 10 ? "PERFECT STRIKE" : (down > 0 ? `${down} QUILLES` : "RATÉ");
 }
 
-function checkFinalScore() {
-    let fallen = currentPins.filter(p => p.isDead).length;
-    gameResult = fallen === 10 ? "PERFECT STRIKE !" : (fallen > 0 ? `${fallen} QUILLES !` : "LOUPE...");
-    gameState = "ENDED";
-}
-
-// --- BOUCLE DE JEU ---
 function draw() {
-    Engine.update(engine, 16.66);
+    Engine.update(engine, 16.6);
     
-    // Jauge de puissance
-    if (gameState === "CHARGING") {
-        power += 2 * powerDirection;
-        if (power >= 100 || power <= 0) powerDirection *= -1;
-        document.getElementById('power-bar').style.width = power + "%";
+    if (state === "CHARGING") {
+        pwr += 2.5 * pwrDir;
+        if (pwr >= 100 || pwr <= 0) pwrDir *= -1;
+        document.getElementById('power-bar').style.width = pwr + "%";
     }
 
-    // Dessin Fond
-    ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white"; stars.forEach(s => { ctx.globalAlpha = s.opacity; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill(); });
+    // BG & Stars
+    ctx.fillStyle = '#020105'; ctx.fillRect(0,0,canvas.width, canvas.height);
+    ctx.fillStyle = "#fff"; stars.forEach(s => { ctx.globalAlpha = s.o; ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, 7); ctx.fill(); });
     ctx.globalAlpha = 1;
 
-    // Traînée & Rotation visuelle
-    if (currentAstre && gameState === "LAUNCHED") {
-        astreTrail.push({ x: currentAstre.position.x, y: currentAstre.position.y });
-        if (astreTrail.length > 20) astreTrail.shift();
-        ctx.beginPath(); ctx.strokeStyle = 'rgba(0, 242, 255, 0.3)'; ctx.lineWidth = currentAstre.circleRadius;
-        astreTrail.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+    // Trail
+    if (state === "LAUNCHED" && planet) {
+        trail.push({x: planet.position.x, y: planet.position.y});
+        if(trail.length > 20) trail.shift();
+        ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)'; ctx.lineWidth = planet.circleRadius*1.5;
+        ctx.beginPath(); trail.forEach(t => ctx.lineTo(t.x, t.y)); ctx.stroke();
     }
 
-    // Dessin Quilles
-    currentPins.forEach(pin => {
-        if (!pin.isDead && (Math.abs(pin.angle) > 0.5 || Math.abs(pin.position.x - pin.startX) > 40)) pin.isDead = true;
+    // Pins
+    pins.forEach(p => {
+        if(!p.isDown && (Math.abs(p.angle) > 0.6 || Math.abs(p.position.x - p.ox) > 50)) p.isDown = true;
         ctx.save();
-        ctx.translate(pin.position.x, pin.position.y);
-        ctx.rotate(pin.angle);
-        // Couleur : plus Z est haut, plus le violet est sombre (poids)
-        const zShade = Math.max(50, 150 - (currentData.z / 100));
-        ctx.fillStyle = pin.isDead ? '#1e293b' : `rgb(${zShade}, 92, 246)`;
-        ctx.beginPath(); ctx.roundRect(-11, -22, 22, 44, 5); ctx.fill();
+        ctx.translate(p.position.x, p.position.y); ctx.rotate(p.angle);
+        // Couleur selon Z
+        const intensity = Math.max(40, 160 - (currentConfig.z / 1000));
+        ctx.fillStyle = p.isDown ? '#222' : `rgb(${intensity}, 50, 255)`;
+        ctx.beginPath(); ctx.roundRect(-11, -24, 22, 48, 4); ctx.fill();
         ctx.restore();
     });
 
-    // Dessin Astre (Planète)
-    if (currentAstre) {
+    // Planet (The "Astre")
+    if (planet) {
         ctx.save();
-        ctx.translate(currentAstre.position.x, currentAstre.position.y);
-        ctx.rotate(currentAstre.angle); // Applique la rotation physique
+        ctx.translate(planet.position.x, planet.position.y);
+        ctx.rotate(planet.angle); // Rotation visible !
         
-        // Sphère 3D
-        const grad = ctx.createRadialGradient(-10, -10, 5, 0, 0, currentAstre.circleRadius);
-        grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.3, '#00f2ff'); grad.addColorStop(1, '#004455');
-        ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.arc(0, 0, currentAstre.circleRadius, 0, Math.PI*2); ctx.fill();
+        // Couleur selon Type
+        let c1 = "#00d4ff", c2 = "#004466";
+        if(currentConfig.type.toLowerCase().includes("terre")) { c1 = "#44ff88"; c2 = "#1144aa"; }
         
-        // Ajout d'un petit "cratère" pour voir la rotation
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.beginPath(); ctx.arc(currentAstre.circleRadius/2, 0, 10, 0, Math.PI*2); ctx.fill();
+        const g = ctx.createRadialGradient(-planet.circleRadius/3, -planet.circleRadius/3, 5, 0, 0, planet.circleRadius);
+        g.addColorStop(0, '#fff'); g.addColorStop(0.2, c1); g.addColorStop(1, c2);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0, 0, planet.circleRadius, 0, 7); ctx.fill();
+        
+        // Détails de surface (pour voir la rotation)
+        ctx.fillStyle = "rgba(0,0,0,0.15)";
+        ctx.beginPath(); ctx.arc(planet.circleRadius/2, -5, planet.circleRadius/4, 0, 7); ctx.fill();
         ctx.restore();
     }
 
-    if (gameState === "ENDED") {
-        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.textAlign = "center"; ctx.fillStyle = "#00f2ff"; ctx.font = "bold 50px Orbitron";
-        ctx.fillText(gameResult, canvas.width / 2, canvas.height / 2);
+    if (state === "ENDED") {
+        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.textAlign = "center"; ctx.fillStyle = "#00d4ff"; ctx.font = "bold 50px Orbitron";
+        ctx.fillText(currentConfig.result, canvas.width/2, canvas.height/2);
     }
 
     requestAnimationFrame(draw);
 }
 
 window.addEventListener('message', (e) => {
-    const regex = /(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i;
-    const m = typeof e.data === 'string' ? e.data.match(regex) : null;
-    if (m) setupScene({ kg: +m[1], type: m[2], lvl: +m[3], z: +m[4] });
+    const m = e.data.match(/(\d+)kg\s*\|\s*Type\s*:\s*([^|]+)\s*\|\s*(\d+)lvl\s*\|\s*Z(\d+)/i);
+    if (m) setup({ kg: +m[1], type: m[2].trim(), lvl: +m[3], z: +m[4] });
 });
 
 draw();
-setupScene({ kg: 120, type: 'Terre', lvl: 150, z: 500 });
+// Test auto
+setup({ kg: 120333, type: 'Terre', lvl: 260, z: 105533 });
 </script>
 </body>
 </html>
